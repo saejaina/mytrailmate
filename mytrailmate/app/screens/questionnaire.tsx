@@ -1,11 +1,12 @@
-// app/screens/Questionnaire.tsx
+// app/screens/QuestionnaireScreen.tsx
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function Questionnaire() {
+export default function QuestionnaireScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Trek Questionnaire</Text>
-      {/* Add your questions here */}
+      {/* Your questions and inputs will go here */}
     </View>
   );
 }
@@ -13,13 +14,11 @@ export default function Questionnaire() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F5F5F5',
     padding: 20,
-    justifyContent: 'center',
-    backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    textAlign: 'center',
   },
 });

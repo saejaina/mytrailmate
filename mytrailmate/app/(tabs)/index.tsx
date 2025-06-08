@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function HomeScreen() {
+export default function WelcomeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>🏠 This is the Home Tab</Text>

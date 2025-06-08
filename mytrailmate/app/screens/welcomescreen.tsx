@@ -1,17 +1,33 @@
 // app/screens/WelcomeScreen.tsx
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type RootStackParamList = {
+  questionnaire: undefined;
+  // add other routes here if needed
+};
 
 export default function WelcomeScreen() {
-  const router = useRouter();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to MyTrailMate 🥾</Text>
-      <Text style={styles.subtitle}>Start your trek by answering a few questions.</Text>
-      <TouchableOpacity onPress={() => router.push('/screens/questionnaire')}>
-        <Ionicons name="arrow-forward-circle" size={60} color="#2e86de" />
+      <Text style={styles.title}>Welcome to MyTrailMate 🏞️</Text>
+      <Text style={styles.subtitle}>
+        Your intelligent trekking companion. Plan smarter. Trek safer.
+      </Text>
+      <Image
+        source={require('../../assets/images/welcome.png')}
+        style={styles.image}
+        resizeMode="contain"
+      />
+      <TouchableOpacity
+        style={styles.arrowButton}
+        onPress={() => navigation.navigate('questionnaire')}
+      >
+        <Text style={styles.arrow}>➡️</Text>
       </TouchableOpacity>
     </View>
   );
@@ -20,19 +36,36 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#CDE8E1',
     alignItems: 'center',
+    justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#fff',
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 10,
+    color: '#1C4D4F',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    marginBottom: 20,
     textAlign: 'center',
+    color: '#333',
+    marginBottom: 20,
+  },
+  image: {
+    width: '100%',
+    height: 250,
+  },
+  arrowButton: {
+    marginTop: 30,
+    backgroundColor: '#1C4D4F',
+    padding: 15,
+    borderRadius: 50,
+  },
+  arrow: {
+    fontSize: 24,
+    color: 'white',
   },
 });
