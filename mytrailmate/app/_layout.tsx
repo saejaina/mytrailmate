@@ -7,21 +7,24 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function RootLayout() {
-return <Stack />;
+  const colorScheme = useColorScheme();
+  const [loaded] = useFonts({
+    // Add your custom fonts here, for example:
+    // 'Inter-Black': require('../assets/fonts/Inter-Black.ttf'),
+  });
+
+  if (!loaded) {
+    // Async font loading only occurs in development.
+    return null;
+  }
+
+  return (
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      <StatusBar style="auto" />
+    </ThemeProvider>
+  );
 }
-
-  // if (!loaded) {
-  //   // Async font loading only occurs in development.
-  //   return null;
-  // }
-
-  // return (
-  //   <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-  //     <Stack>
-  //       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-  //       <Stack.Screen name="+not-found" />
-  //     </Stack>
-  //     <StatusBar style="auto" />
-  //   </ThemeProvider>
-//   // );
-// }
