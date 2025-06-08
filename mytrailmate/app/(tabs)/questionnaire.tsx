@@ -1,16 +1,10 @@
-// app/screens/WelcomeScreen.tsx
+// app/index.tsx
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { StackNavigationProp } from '@react-navigation/stack';
-
-type RootStackParamList = {
-  questionnaire: undefined;
-  // add other routes here if needed
-};
+import { useRouter } from 'expo-router';
 
 export default function WelcomeScreen() {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const router = useRouter(); // <-- Correct for Expo Router
 
   return (
     <View style={styles.container}>
@@ -19,13 +13,13 @@ export default function WelcomeScreen() {
         Your intelligent trekking companion. Plan smarter. Trek safer.
       </Text>
       <Image
-        source={require('../../assets/images/welcome.png')}
+        source={require('../assets/images/welcome-illustration.png')}
         style={styles.image}
         resizeMode="contain"
       />
       <TouchableOpacity
         style={styles.arrowButton}
-        onPress={() => navigation.navigate('questionnaire')}
+        onPress={() => router.push('/questionnaire')}
       >
         <Text style={styles.arrow}>➡️</Text>
       </TouchableOpacity>
