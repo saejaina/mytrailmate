@@ -13,7 +13,7 @@ export default function WelcomeScreen() {
         Your intelligent trekking companion. Plan smarter. Trek safer.
       </Text>
       <Image
-        source={require('../assets/images/welcome-illustration.png')}
+        source={require('../assets/images/welcome.png')}
         style={styles.image}
         resizeMode="contain"
       />
