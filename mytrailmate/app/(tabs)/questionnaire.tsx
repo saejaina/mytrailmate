@@ -1,65 +1,17 @@
-// app/index.tsx
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { useRouter } from 'expo-router';
+// app/QuestionnaireScreen.tsx
+import { View, Text, StyleSheet } from 'react-native';
 
-export default function WelcomeScreen() {
-  const router = useRouter(); // <-- Correct for Expo Router
-
+export default function QuestionnaireScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to MyTrailMate 🏞️</Text>
-      <Text style={styles.subtitle}>
-        Your intelligent trekking companion. Plan smarter. Trek safer.
-      </Text>
-      <Image
-        source={require('../assets/images/welcome-illustration.png')}
-        style={styles.image}
-        resizeMode="contain"
-      />
-      <TouchableOpacity
-        style={styles.arrowButton}
-        onPress={() => router.push('/questionnaire')}
-      >
-        <Text style={styles.arrow}>➡️</Text>
-      </TouchableOpacity>
+      <Text style={styles.title}>Trail Questionnaire</Text>
+      <Text style={styles.text}>Start answering to customize your trek!</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#CDE8E1',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#1C4D4F',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: '#333',
-    marginBottom: 20,
-  },
-  image: {
-    width: '100%',
-    height: 250,
-  },
-  arrowButton: {
-    marginTop: 30,
-    backgroundColor: '#1C4D4F',
-    padding: 15,
-    borderRadius: 50,
-  },
-  arrow: {
-    fontSize: 24,
-    color: 'white',
-  },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
+  title: { fontSize: 24, fontWeight: 'bold' },
+  text: { fontSize: 16, marginTop: 8 },
 });
