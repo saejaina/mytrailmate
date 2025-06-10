@@ -6,7 +6,7 @@ export default function WelcomeScreen() {
 
   return (
     <ImageBackground 
-      source={require('../../assets/images/welcome.png')} // Add your image path
+      source={require('../assets/images/welcome.png')} // Add your image path
       style={styles.background}
       resizeMode="cover"
     >
@@ -17,7 +17,7 @@ export default function WelcomeScreen() {
         {/* Skip button at top right */}
         <TouchableOpacity 
           style={styles.skipButton}
-          onPress={() => router.push('/explore')}
+          onPress={() => router.push('/home')}
         >
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
@@ -32,22 +32,26 @@ export default function WelcomeScreen() {
 
         {/* Authentication buttons */}
         <View style={styles.authContainer}>
+
           {/* Continue with Google */}
           <TouchableOpacity style={[styles.button, styles.googleButton]}>
             <Image 
-              source={require('../../assets/images/google.png')} 
+              source={require('../assets/images/google.png')} 
               style={styles.icon}
             />
             <Text style={styles.buttonText}>Continue with Google</Text>
           </TouchableOpacity>
 
+
           {/* Create Account */}
           <TouchableOpacity 
             style={[styles.button, styles.createAccountButton]}
-            onPress={() => router.push('/questionnaire')}
+            // onPress={() => router.push('/create-account')}
           >
             <Text style={[styles.buttonText, { color: '#fff' }]}>Create an Account</Text>
           </TouchableOpacity>
+
+
 
           {/* Login option */}
           <TouchableOpacity style={styles.loginLink}>
