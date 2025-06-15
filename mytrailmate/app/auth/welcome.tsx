@@ -1,8 +1,9 @@
-import { View, Text, TouchableOpacity, Image, StyleSheet, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, TextInput, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 
 export default function WelcomeScreen() {
+  const { width } = Dimensions.get('window');
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,7 +14,7 @@ export default function WelcomeScreen() {
         {/* Skip button at top right */}
         <TouchableOpacity 
           style={styles.skipButton}
-          onPress={() => router.push('/home')}
+          onPress={() => router.push('../(tabs)/home')}
         >
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
@@ -62,20 +63,28 @@ export default function WelcomeScreen() {
 
 
           {/* Login option */}
-          <TouchableOpacity style={styles.loginLink}>
-            <Text style={styles.loginText}>Already have an account? <Text style={styles.loginBold}>Sign in</Text></Text>
+          <TouchableOpacity style={styles.loginLink}
+          onPress={() => router.push('../auth/sign-in')}
+          >
+            <Text style={styles.loginText}>Already have an account? 
+              <Text style={styles.loginBold}> Sign in</Text></Text>
+              
+
           </TouchableOpacity>
         </View>
       </View>
   );
 }
 
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
 const styles = StyleSheet.create({
   background: {
-    width: 320,
-    height: 250,
+    width: SCREEN_WIDTH * 0.9,
+    height: SCREEN_WIDTH * 0.7,
+    resizeMode: 'contain',
+    alignSelf: 'center',
     marginBottom: 10,
-
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -103,7 +112,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 25,
-    marginBottom: 5,
     fontWeight: '500',
 
   },
@@ -124,8 +132,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     fontSize: 16,
   },
-
-
 
   brand: {
     fontSize: 32,
@@ -154,7 +160,7 @@ const styles = StyleSheet.create({
   },
   authContainer: {
     width: '100%',
-    marginBottom: 40,
+    marginBottom: 55,
   },
   button: {
     flexDirection: 'row',
