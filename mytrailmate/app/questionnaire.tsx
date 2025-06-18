@@ -1,4 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+ import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'expo-router';
+import { calculateRisk } from '../utils/riskScoring';
+
 import {
   View,
   Text,
@@ -20,6 +23,7 @@ const topics = [
 ];
 
 const Questionnaire = () => {
+  const router = useRouter();
   const [currentTab, setCurrentTab] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -27,6 +31,9 @@ const Questionnaire = () => {
     name: '',
     age: '',
     bloodType: '',
+    phone: '', 
+    address: '',
+    citizenshipnumber: '',
     allergies: '',
     medicalCondition: '',
     hasHikedBefore: '',
@@ -83,6 +90,30 @@ const Questionnaire = () => {
               value={formData.bloodType}
               onChangeText={text => handleChange('bloodType', text)}
             />
+        
+          <Text style={styles.label}>Phone Number</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your phone number"
+            keyboardType="phone-pad"
+            value={formData.phone}
+            onChangeText={text => handleChange('phone', text)}
+          />  
+          <Text style={styles.label}>Address</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your address"
+            value={formData.address}
+            onChangeText={text => handleChange('address', text)}
+          />
+          <Text style={styles.label}>Citizenship Number</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your citizenship number"
+            keyboardType="number-pad"
+            value={formData.citizenshipnumber}
+            onChangeText={text => handleChange('citizenshipnumber', text)}
+          />
           </>
         );
       case 1:
@@ -188,9 +219,19 @@ const Questionnaire = () => {
   };
 
   const handleSubmit = () => {
-    console.log('Form submitted:', formData);
-    // Future backend logic
-  };
+  const result = calculateRisk({
+    fitness: 7,
+    experience: 5,
+    gear: 3,
+    health: 8,
+    weather: 6,
+  });
+
+  router.push({
+    pathname: "/results",
+    params: { data: JSON.stringify(result) },
+  });
+};
 
   return (
     <View style={styles.container}>
@@ -320,4 +361,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-});
+}); 
