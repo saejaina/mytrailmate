@@ -1,6 +1,6 @@
  import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { calculateRisk } from '../utils/riskScoring';
+import { calculateRisk } from '../utils/riskscoring';
 
 import {
   View,
