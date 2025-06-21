@@ -1,14 +1,19 @@
 // app/(tabs)/_layout.tsx
-import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Stack, Tabs } from 'expo-router';
 
 export default function TabLayout() {
   return (
-    <Tabs>
+
+     <>
+      <Stack>
+        <Stack.Screen name="home" options={{ headerShown: false }} />
+
+       <Tabs>
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: 'About us',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -33,5 +38,15 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+
+      </Stack>
+
+    </>
   );
 }
+
+   
+
+       
+
+  
