@@ -1,7 +1,5 @@
- import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { calculateRisk } from '../utils/riskscoring';
-
 import {
   View,
   Text,
@@ -13,37 +11,15 @@ import {
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
-const topics = [
-  'Personal Info',
-  'Health Info',
-  'Trek Experience',
-  'Gear Prep',
-  'Weather Adaptation',
-  'Emergency Contact',
-];
+const topics = ['Trek Mode', 'Personal Info', 'Health Info', 'Trek Experience', 'Gear Prep', 'Planning', 'Emergency Contact'];
 
 const Questionnaire = () => {
   const router = useRouter();
   const [currentTab, setCurrentTab] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+  const [trekMode, setTrekMode] = useState<'solo' | 'group' | null>(null);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    age: '',
-    bloodType: '',
-    phone: '', 
-    address: '',
-    citizenshipnumber: '',
-    allergies: '',
-    medicalCondition: '',
-    hasHikedBefore: '',
-    gearItems: '',
-    coldPrep: '',
-    durationPref: '',
-    trailRegion: '',
-    emergencyName: '',
-    emergencyPhone: '',
-  });
+  const [formData, setFormData] = useState({});
 
   const handleChange = (key: string, value: string) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -65,150 +41,165 @@ const Questionnaire = () => {
     switch (currentTab) {
       case 0:
         return (
-          <>
-            <Text style={styles.label}>Full Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your name"
-              value={formData.name}
-              onChangeText={text => handleChange('name', text)}
-            />
-
-            <Text style={styles.label}>Age</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your age"
-              keyboardType="number-pad"
-              value={formData.age}
-              onChangeText={text => handleChange('age', text)}
-            />
-
-            <Text style={styles.label}>Blood Type</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="E.g., A+, O-"
-              value={formData.bloodType}
-              onChangeText={text => handleChange('bloodType', text)}
-            />
-        
-          <Text style={styles.label}>Phone Number</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your phone number"
-            keyboardType="phone-pad"
-            value={formData.phone}
-            onChangeText={text => handleChange('phone', text)}
-          />  
-          <Text style={styles.label}>Address</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your address"
-            value={formData.address}
-            onChangeText={text => handleChange('address', text)}
-          />
-          <Text style={styles.label}>Citizenship Number</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your citizenship number"
-            keyboardType="number-pad"
-            value={formData.citizenshipnumber}
-            onChangeText={text => handleChange('citizenshipnumber', text)}
-          />
-          </>
+          <View>
+            <Text style={styles.label}>Are you trekking solo or with a group?</Text>
+            <View style={styles.toggleContainer}>
+              <TouchableOpacity
+                style={[styles.toggleButton, trekMode === 'solo' && styles.selected]}
+                onPress={() => setTrekMode('solo')}
+              >
+                <Text>Solo</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.toggleButton, trekMode === 'group' && styles.selected]}
+                onPress={() => setTrekMode('group')}
+              >
+                <Text>Group</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         );
       case 1:
         return (
-          <>
-            <Text style={styles.label}>Any Allergies?</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="E.g., pollen, peanuts"
-              value={formData.allergies}
-              onChangeText={text => handleChange('allergies', text)}
-            />
+          <View>
+            <Text style={styles.label}>Full Name</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('name', text)} />
+            <Text style={styles.label}>Age</Text>
+            <TextInput style={styles.input} keyboardType="numeric" onChangeText={text => handleChange('age', text)} />
+            <Text style={styles.label}>Gender</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('gender', text)} />
+            <Text style={styles.label}>Blood Group</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('bloodGroup', text)} />
+            <Text style={styles.label}>Emergency Contact</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('emergencyContact', text)} />
 
-            <Text style={styles.label}>Medical Conditions</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="E.g., asthma, diabetes"
-              value={formData.medicalCondition}
-              onChangeText={text => handleChange('medicalCondition', text)}
-            />
-          </>
+            {trekMode === 'group' && (
+              <>
+                <Text style={styles.label}>Group Name or Team Name</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('groupName', text)} />
+                <Text style={styles.label}>Group Leader Name</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('groupLeader', text)} />
+                <Text style={styles.label}>Total Number of Members</Text>
+                <TextInput style={styles.input} keyboardType="numeric" onChangeText={text => handleChange('groupSize', text)} />
+                <Text style={styles.label}>Age range of group (e.g., 18–25)</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('groupAgeRange', text)} />
+                <Text style={styles.label}>List all member names and ages</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('groupMembers', text)} />
+                <Text style={styles.label}>Any children or seniors in group? (Yes/No)</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('childrenOrSeniors', text)} />
+                <Text style={styles.label}>Guide or experienced leader in group? (Yes/No)</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('hasLeader', text)} />
+              </>
+            )}
+          </View>
         );
       case 2:
         return (
-          <>
-            <Text style={styles.label}>Have you ever hiked before?</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Yes / No"
-              value={formData.hasHikedBefore}
-              onChangeText={text => handleChange('hasHikedBefore', text)}
-            />
-          </>
+          <View>
+            <Text style={styles.label}>Do you have any allergies or medical conditions?</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('medicalConditions', text)} />
+            <Text style={styles.label}>If yes, please specify</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('medicalDetails', text)} />
+            <Text style={styles.label}>Are you carrying a medical kit?</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('medicalKit', text)} />
+
+            {trekMode === 'group' && (
+              <>
+                <Text style={styles.label}>Any serious conditions in group? (Yes/No)</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('groupConditions', text)} />
+                <Text style={styles.label}>If yes, please specify</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('groupConditionDetails', text)} />
+                <Text style={styles.label}>Shared medical kit? (Yes/No)</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('groupMedicalKit', text)} />
+                <Text style={styles.label}>First aid trained person present? (Yes/No)</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('groupFirstAid', text)} />
+              </>
+            )}
+          </View>
         );
       case 3:
         return (
-          <>
-            <Text style={styles.label}>List essential gear you have</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="E.g., hiking boots, tent"
-              value={formData.gearItems}
-              onChangeText={text => handleChange('gearItems', text)}
-            />
-          </>
+          <View>
+            <Text style={styles.label}>How many treks have you completed?</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('trekCount', text)} />
+            <Text style={styles.label}>Most difficult trek you've done?</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('difficultTrek', text)} />
+            <Text style={styles.label}>Experienced altitude sickness?</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('altitudeSickness', text)} />
+            <Text style={styles.label}>Average pace</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('pace', text)} />
+
+            {trekMode === 'group' && (
+              <>
+                <Text style={styles.label}>Members with trek experience</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('experiencedMembers', text)} />
+                <Text style={styles.label}>Most difficult trek done by any member</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('groupDifficultTrek', text)} />
+                <Text style={styles.label}>Trek together before? (Yes/No)</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('trekkedTogether', text)} />
+                <Text style={styles.label}>Group's average pace</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('groupPace', text)} />
+              </>
+            )}
+          </View>
         );
       case 4:
         return (
-          <>
-            <Text style={styles.label}>Prepared for cold/rainy weather?</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="E.g., raincoat, thermal wear"
-              value={formData.coldPrep}
-              onChangeText={text => handleChange('coldPrep', text)}
-            />
+          <View>
+            <Text style={styles.label}>Do you have essential gear?</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('gear', text)} />
+            <Text style={styles.label}>Carrying tent/sleeping bag?</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('shelter', text)} />
+            <Text style={styles.label}>Using navigation aid?</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('navigation', text)} />
 
-            <Text style={styles.label}>Preferred Trek Duration</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="E.g., 1 day, 3 days, 1 week"
-              value={formData.durationPref}
-              onChangeText={text => handleChange('durationPref', text)}
-            />
-
-            <Text style={styles.label}>Preferred Trail Region</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="E.g., Annapurna, Langtang"
-              value={formData.trailRegion}
-              onChangeText={text => handleChange('trailRegion', text)}
-            />
-          </>
+            {trekMode === 'group' && (
+              <>
+                <Text style={styles.label}>Does every member have gear? (Yes/No/Some)</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('groupGear', text)} />
+                <Text style={styles.label}>Shared communication devices? (Yes/No)</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('groupComm', text)} />
+              </>
+            )}
+          </View>
         );
       case 5:
         return (
-          <>
-            <Text style={styles.label}>Emergency Contact Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Full name"
-              value={formData.emergencyName}
-              onChangeText={text => handleChange('emergencyName', text)}
-            />
+          <View>
+            <Text style={styles.label}>Trail selected?</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('trailSelected', text)} />
+            <Text style={styles.label}>Have trail map?</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('trailMap', text)} />
+            <Text style={styles.label}>Backup emergency plan?</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('backupPlan', text)} />
+            <Text style={styles.label}>Someone aware of trek plan?</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('trekAwareness', text)} />
+            <Text style={styles.label}>Aware of permit requirements?</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('permitAwareness', text)} />
 
-            <Text style={styles.label}>Emergency Phone Number</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Phone number"
-              keyboardType="phone-pad"
-              value={formData.emergencyPhone}
-              onChangeText={text => handleChange('emergencyPhone', text)}
-            />
-          </>
+            {trekMode === 'group' && (
+              <>
+                <Text style={styles.label}>Any cold-sensitive members? (Yes/No)</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('coldSensitive', text)} />
+                <Text style={styles.label}>Everyone has weather gear? (Yes/No)</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('weatherGear', text)} />
+                <Text style={styles.label}>Weather conditions checked? (Yes/No)</Text>
+                <TextInput style={styles.input} onChangeText={text => handleChange('weatherChecked', text)} />
+              </>
+            )}
+          </View>
         );
+      case 6:
+        return (
+          <View>
+            <Text style={styles.label}>Emergency Contact Name</Text>
+            <TextInput style={styles.input} onChangeText={text => handleChange('emergencyName', text)} />
+            <Text style={styles.label}>Emergency Phone</Text>
+            <TextInput style={styles.input} keyboardType="phone-pad" onChangeText={text => handleChange('emergencyPhone', text)} />
+          </View>
+        );
+      default:
+        return null;
     }
   };
 
@@ -217,21 +208,6 @@ const Questionnaire = () => {
       setCurrentTab(prev => prev + 1);
     }
   };
-
-  const handleSubmit = () => {
-  const result = calculateRisk({
-    fitness: 7,
-    experience: 5,
-    gear: 3,
-    health: 8,
-    weather: 6,
-  });
-
-  router.push({
-    pathname: "/results",
-    params: { data: JSON.stringify(result) },
-  });
-};
 
   return (
     <View style={styles.container}>
@@ -245,19 +221,10 @@ const Questionnaire = () => {
         {topics.map((topic, index) => (
           <TouchableOpacity
             key={index}
-            style={[
-              styles.tabButton,
-            ]}
+            style={styles.tabButton}
             onPress={() => setCurrentTab(index)}
           >
-            <Text
-              style={[
-                styles.tabText,
-                currentTab === index && styles.activeTabText,
-              ]}
-            >
-              {topic}
-            </Text>
+            <Text style={[styles.tabText, currentTab === index && styles.activeTabText]}>{topic}</Text>
             {currentTab === index && <View style={styles.underline} />}
           </TouchableOpacity>
         ))}
@@ -268,21 +235,13 @@ const Questionnaire = () => {
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>
-            {currentTab === topics.length - 1 ? 'Save Changes' : 'Save & Continue'}
+            {currentTab === topics.length - 1 ? 'Finish' : 'Save & Continue'}
           </Text>
         </TouchableOpacity>
-
-        {currentTab === topics.length - 1 && (
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={styles.submitButtonText}>Submit</Text>
-          </TouchableOpacity>
-        )}
       </ScrollView>
     </View>
   );
 };
-
-export default Questionnaire;
 
 const styles = StyleSheet.create({
   container: {
@@ -336,6 +295,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
+    marginBottom: 10,
   },
   saveButton: {
     marginTop: 30,
@@ -349,16 +309,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  submitButton: {
-    marginTop: 15,
-    backgroundColor: '#34c759',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
+  toggleContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
   },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  toggleButton: {
+    padding: 10,
+    backgroundColor: '#eee',
+    borderRadius: 8,
+    marginRight: 10,
   },
-}); 
+  selected: {
+    backgroundColor: '#cce5ff',
+  },
+});
+
+export default Questionnaire;
