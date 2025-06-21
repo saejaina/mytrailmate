@@ -7,6 +7,9 @@ export default function WelcomeScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
+const [passwordError, setPasswordError] = useState('');
+
 
   return (
       
@@ -30,35 +33,61 @@ export default function WelcomeScreen() {
 
           <Text style={styles.heading}>Create an Account</Text>
 
-           <TextInput
-        style={styles.input}
-        placeholder="Enter email"
-        placeholderTextColor="#888"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={email}
-        onChangeText={setEmail}
-      />
+          <TextInput
+  style={[styles.input, emailError ? styles.inputError : null]}
+  placeholder="Enter email"
+  placeholderTextColor="#888"
+  keyboardType="email-address"
+  autoCapitalize="none"
+  value={email}
+  onChangeText={setEmail}
+/>
+{emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+
 
       {/* Password Input */}
       <TextInput
-        style={styles.input}
-        placeholder="Enter password"
-        placeholderTextColor="#888"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+  style={[styles.input, passwordError ? styles.inputError : null]}
+  placeholder="Enter password"
+  placeholderTextColor="#888"
+  secureTextEntry
+  value={password}
+  onChangeText={setPassword}
+/>
+{passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+
 
 
 
           {/* Create Account */}
-          <TouchableOpacity 
-            style={[styles.button, styles.createAccountButton]}
-            // onPress={() => router.push('/create-account')}
-          >
-            <Text style={[styles.buttonText, { color: '#fff' }]}>Sign up</Text>
-          </TouchableOpacity>
+         <TouchableOpacity 
+  style={[styles.button, styles.createAccountButton]}
+ onPress={() => {
+  let valid = true;
+
+  if (email.trim() === '') {
+    setEmailError('Please enter your email');
+    valid = false;
+  } else {
+    setEmailError('');
+  }
+
+  if (password.trim() === '') {
+    setPasswordError('Please enter your password');
+    valid = false;
+  } else {
+    setPasswordError('');
+  }
+
+  if (valid) {
+    router.push('/questionnaire');
+  }
+}}
+
+>
+  <Text style={[styles.buttonText, { color: '#fff' }]}>Sign up</Text>
+</TouchableOpacity>
+
 
 
 
@@ -109,6 +138,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: SCREEN_WIDTH < 350 ? 20 : 15,
+    paddingBottom: SCREEN_WIDTH < 350 ? 10 : 20,
   },
   title: {
     fontSize: 25,
@@ -198,4 +229,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'rgba(0, 0, 0, 0.97)',
   },
+
+  inputError: {
+  borderColor: 'red',
+},
+
+errorText: {
+  color: 'red',
+  fontSize: 12,
+  marginBottom: 10,
+  marginLeft: 5,
+},
+
+
+
 });
