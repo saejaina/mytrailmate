@@ -10,6 +10,8 @@ export default function RootLayout() {
       <Stack.Screen name="questionnaire" options={{ headerShown: false }} />
       <Stack.Screen name="auth" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="results" options={{ headerShown: false }} />
+      <Stack.Screen name="recommendtrails" options={{ headerShown: false }} />
     </Stack>
   );
 }

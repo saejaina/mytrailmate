@@ -63,27 +63,31 @@ const [passwordError, setPasswordError] = useState('');
          <TouchableOpacity 
   style={[styles.button, styles.createAccountButton]}
  onPress={() => {
-  let valid = true;
+ let valid = true;
 
-  if (email.trim() === '') {
-    setEmailError('Please enter your email');
-    valid = false;
-  } else {
-    setEmailError('');
-  }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (password.trim() === '') {
-    setPasswordError('Please enter your password');
-    valid = false;
-  } else {
-    setPasswordError('');
-  }
+    if (email.trim() === '') {
+      setEmailError('Please enter your email');
+      valid = false;
+    } else if (!emailRegex.test(email)) {
+      setEmailError('Enter a valid email address');
+      valid = false;
+    } else {
+      setEmailError('');
+    }
 
-  if (valid) {
-    router.push('/questionnaire');
-  }
-}}
+    if (password.trim() === '') {
+      setPasswordError('Please enter your password');
+      valid = false;
+    } else {
+      setPasswordError('');
+    }
 
+    if (valid) {
+      router.push('/questionnaire');
+    }
+  }}
 >
   <Text style={[styles.buttonText, { color: '#fff' }]}>Sign up</Text>
 </TouchableOpacity>
@@ -138,7 +142,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: SCREEN_WIDTH < 350 ? 20 : 15,
+    paddingTop: SCREEN_WIDTH < 350 ? 20 : 10,
     paddingBottom: SCREEN_WIDTH < 350 ? 10 : 20,
   },
   title: {

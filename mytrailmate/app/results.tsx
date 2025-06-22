@@ -1,11 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  useWindowDimensions,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 
 const Results = () => {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const { score, data } = useLocalSearchParams();
 
   if (!score || !data) return null;
@@ -14,37 +22,56 @@ const Results = () => {
   const numericScore = parseInt(score as string);
   const percentage = Math.min(Math.max(numericScore, 0), 100);
 
-  // Custom trail suggestion logic (keep it exactly as you wrote)
-  const getTrailSuggestions = () => {
-    if (numericScore >= 85) return ['Annapurna Base Camp', 'Langtang Valley'];
-    if (numericScore >= 70) return ['Mardi Himal', 'Poon Hill'];
-    if (numericScore >= 50) return ['Shivapuri Hike', 'Namobuddha Trail'];
-    return ['Short Nature Walk', 'Local Heritage Trek'];
-  };
-
-  // For SVG Circle
-  const radius = 80;
-  const strokeWidth = 10;
+  // Circular chart sizing
+  const radius = width * 0.3;
+  const strokeWidth = 12;
   const circumference = 2 * Math.PI * radius;
   const progress = (percentage / 100) * circumference;
 
+  const getCategoryScores = () => {
+    const age = parseInt(parsedData.age || '0');
+    const trekCount = parseInt(parsedData.trekCount || '0');
+
+    return {
+      Health: 25 -
+        (parsedData.medicalConditions?.toLowerCase() === 'yes' ? 10 : 0) -
+        (age < 16 || age > 50 ? 5 : 0),
+      Gear: 25 -
+        (parsedData.gear?.toLowerCase() !== 'yes' ? 10 : 0) -
+        (parsedData.groupGear?.toLowerCase() === 'no' ? 5 : 0),
+      Experience: 25 - (trekCount < 2 ? 10 : 0),
+      Planning: 25 - (parsedData.backupPlan?.toLowerCase() !== 'yes' ? 10 : 0),
+    };
+  };
+
+  const categoryScores = getCategoryScores();
+
+  const getImprovementTips = () => {
+    const tips = [];
+    if (categoryScores.Health < 20) tips.push('Maintain good health & avoid trekking with serious conditions.');
+    if (categoryScores.Gear < 20) tips.push('Ensure all essential gear is packed. Group members must carry gear.');
+    if (categoryScores.Experience < 20) tips.push('Gain more trekking experience before attempting harder trails.');
+    if (categoryScores.Planning < 20) tips.push('Have a backup plan and ensure someone knows your trek itinerary.');
+    return tips;
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: 50, paddingBottom: 60, paddingLeft: 30, paddingRight: 30 }]}>
       <Text style={styles.title}>Your Trek Readiness Score</Text>
 
       <View style={styles.chartWrapper}>
-        <Svg width="200" height="200">
+        <Svg width={radius * 2 + 20} height={radius * 2 + 20}>
           <Circle
-            cx="100"
-            cy="100"
+            cx={radius + 10}
+            cy={radius + 10}
             r={radius}
             stroke="#E5E7EB"
             strokeWidth={strokeWidth}
             fill="none"
           />
           <Circle
-            cx="100"
-            cy="100"
+            cx={radius + 10}
+            cy={radius + 10}
             r={radius}
             stroke={percentage >= 70 ? '#34D399' : percentage >= 50 ? '#FBBF24' : '#F87171'}
             strokeWidth={strokeWidth}
@@ -53,24 +80,43 @@ const Results = () => {
             strokeLinecap="round"
             fill="none"
             rotation="-90"
-            origin="100, 100"
+            origin={`${radius + 10}, ${radius + 10}`}
           />
         </Svg>
-        <Text style={styles.scoreText}>{percentage}%</Text>
+        <Text style={[styles.scoreText, { top: radius + 10 - 25 }]}>
+          {percentage}%
+        </Text>
       </View>
 
-      <View style={styles.trailCard}>
-        <Text style={styles.subTitle}>Recommended Trails</Text>
-        {getTrailSuggestions().map((trail, index) => (
-          <View key={index} style={styles.trailItem}>
-            <Text style={styles.trailText}>{trail}</Text>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>📊 Risk Breakdown</Text>
+        {Object.entries(categoryScores).map(([category, score]) => (
+          <View key={category} style={styles.breakdownRow}>
+            <Text style={styles.categoryText}>{category}</Text>
+            <View style={styles.scoreBarBackground}>
+              <View style={[styles.scoreBarFill, { width: `${(score / 25) * 100}%` }]} />
+            </View>
+            <Text style={styles.scoreTextSmall}>{score}/25</Text>
           </View>
         ))}
       </View>
 
-      <TouchableOpacity style={styles.actionButton} onPress={() => alert("Start Planning Coming Soon!")}>
-        <AntDesign name="calendar" size={18} color="white" />
-        <Text style={styles.buttonText}>Start Planning</Text>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>💡 How You Can Improve</Text>
+        {getImprovementTips().map((tip, index) => (
+          <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <MaterialIcons name="check-circle" size={18} color="#10B981" />
+            <Text style={[styles.tipItem, { marginLeft: 8 }]}>{tip}</Text>
+          </View>
+        ))}
+      </View>
+
+      <TouchableOpacity
+        style={[styles.actionButton, { backgroundColor: '#2c8ef4' }]}
+        onPress={() => router.push({ pathname: '/recommendtrails', params: { score } })}
+      >
+        <AntDesign name="enviromento" size={18} color="white" />
+        <Text style={styles.buttonText}>Recommended Trails</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -88,7 +134,7 @@ export default Results;
 
 const styles = StyleSheet.create({
   container: {
-    padding: 24,
+    paddingHorizontal: 24,
     backgroundColor: '#F0F9FF',
     alignItems: 'center',
   },
@@ -96,10 +142,10 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     color: '#111827',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   chartWrapper: {
-    marginBottom: 30,
+    marginBottom: 36,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -109,18 +155,10 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: '#1E3A8A',
-    top: 80,
-    left: 0,
-    right: 0,
     textAlign: 'center',
+    width: '100%',
   },
-  subTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 10,
-    color: '#1E40AF',
-  },
-  trailCard: {
+  card: {
     width: '100%',
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -132,15 +170,40 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
-  trailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    color: '#1E40AF',
   },
-  trailText: {
-    marginLeft: 8,
+  breakdownRow: {
+    marginBottom: 12,
+  },
+  categoryText: {
     fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+    color: '#1F2937',
+  },
+  scoreBarBackground: {
+    height: 10,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  scoreBarFill: {
+    height: 10,
+    backgroundColor: '#3B82F6',
+  },
+  scoreTextSmall: {
+    fontSize: 13,
     color: '#374151',
+    marginTop: 2,
+  },
+  tipItem: {
+    fontSize: 15,
+    color: '#374151',
+    marginBottom: 8,
   },
   actionButton: {
     flexDirection: 'row',
