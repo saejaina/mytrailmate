@@ -30,7 +30,7 @@ const features = [
   },
   {
     title: 'Weather Forecast',
-    desc: 'AI-suggested trails personalized to your fitness level.',
+    desc: 'Get live and upcoming weather updates to plan safer and smarter treks.',
     image: require('../../assets/images/recommendation.png'),
     route: '/features/recommend'
   },
@@ -59,7 +59,7 @@ export default function Dashboard() {
           <TouchableOpacity
             key={index}
             style={styles.card}
-            onPress={() => router.push(item.route)}
+            // onPress={() => router.push(item.route)}
           >
             <Image source={item.image} style={styles.icon} />
             <Text style={styles.title}>{item.title}</Text>
@@ -73,7 +73,7 @@ export default function Dashboard() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 40,
+    paddingTop: 70,
     paddingHorizontal: 16,
     backgroundColor: '#f3f8fe',
   },

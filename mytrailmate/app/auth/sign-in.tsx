@@ -14,46 +14,73 @@ import * as Animatable from 'react-native-animatable';
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const router = useRouter();
 
   const handleSubmit = () => {
-    if (!email.trim() || !password.trim()) {
-      setError('Please enter both email and password.');
-      return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?#&])[A-Za-z\d@$!%*?#&]{8,}$/;
+
+    let valid = true;
+
+    if (!email.trim()) {
+      setEmailError('Please enter your email');
+      valid = false;
+    } else if (!emailRegex.test(email)) {
+      setEmailError('Enter a valid email address');
+      valid = false;
+    } else {
+      setEmailError('');
     }
 
-    setError('');
-    const username = email.split('@')[0];
-    Alert.alert('Login Successful', `Welcome, ${username}!`);
-    router.push('/(tabs)/dashboard');
+    if (!password.trim()) {
+      setPasswordError('Please enter your password');
+      valid = false;
+    } else if (!passwordRegex.test(password)) {
+      setPasswordError(
+        'Password must be at least 8 characters and include upper, lower, number, and special character'
+      );
+      valid = false;
+    } else {
+      setPasswordError('');
+    }
+
+    if (valid) {
+      const username = email.split('@')[0];
+      Alert.alert('Login Successful', `Welcome, ${username}!`);
+      router.push('/(tabs)/dashboard');
+    }
   };
 
   return (
     <View style={styles.container}>
       <Animatable.View animation="fadeInUp" delay={200} style={styles.form}>
         <Image
-          source={require('../../assets/images/logo.png')} // Add your logo here
+          source={require('../../assets/images/welcome.png')}
           style={styles.logo}
         />
         <Text style={styles.title}>Sign In to MyTrailMate</Text>
-        {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <TextInput
-          placeholder="Email"
-          style={styles.input}
+          placeholder="Enter email"
+          style={[styles.input, emailError ? styles.inputError : null]}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
         />
+        {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+
         <TextInput
-          placeholder="Password"
-          style={styles.input}
+          placeholder="Enter password"
+          style={[styles.input, passwordError ? styles.inputError : null]}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
+        {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
         <TouchableOpacity style={styles.button} onPress={handleSubmit}>
           <Text style={styles.buttonText}>Log In</Text>
@@ -69,10 +96,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#e0eafc',
+    backgroundColor: 'rgba(207, 233, 207, 0.95)',
   },
   form: {
-    backgroundColor: 'rgba(201, 222, 244, 0.95)',
+    backgroundColor: 'rgba(187, 223, 187, 0.95)',
     padding: 26,
     borderRadius: 20,
     width: '85%',
@@ -103,6 +130,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 12,
   },
+  inputError: {
+    borderColor: 'red',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginBottom: 10,
+    marginLeft: 5,
+  },
   button: {
     backgroundColor: '#4e8df5',
     padding: 15,
@@ -118,15 +154,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 17,
     fontWeight: '600',
-  },
-  error: {
-    backgroundColor: '#ffe5e9',
-    color: '#d62828',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 12,
-    textAlign: 'center',
-    fontSize: 14,
   },
   quote: {
     textAlign: 'center',

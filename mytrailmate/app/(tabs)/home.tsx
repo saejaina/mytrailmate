@@ -63,11 +63,7 @@ const policies = [
     desc: 'Your data is encrypted with Firebase-grade protection and safe cloud handling.',
     icon: require('../../assets/images/secure.png'),
   },
-  {
-    title: 'Anonymous Usage',
-    desc: 'Guest Mode lets you use the app anonymously without logging in. No identity needed.',
-    icon: require('../../assets/images/guest.png'),
-  },
+  
 ];
 
 export default function AboutUs() {

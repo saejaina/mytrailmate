@@ -62,32 +62,39 @@ const [passwordError, setPasswordError] = useState('');
           {/* Create Account */}
          <TouchableOpacity 
   style={[styles.button, styles.createAccountButton]}
- onPress={() => {
- let valid = true;
+onPress={() => {
+  let valid = true;
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?#&])[A-Za-z\d@$!%*?#&]{8,}$/;
 
-    if (email.trim() === '') {
-      setEmailError('Please enter your email');
-      valid = false;
-    } else if (!emailRegex.test(email)) {
-      setEmailError('Enter a valid email address');
-      valid = false;
-    } else {
-      setEmailError('');
-    }
+  // Email validation
+  if (email.trim() === '') {
+    setEmailError('Please enter your email');
+    valid = false;
+  } else if (!emailRegex.test(email)) {
+    setEmailError('Enter a valid email address');
+    valid = false;
+  } else {
+    setEmailError('');
+  }
 
-    if (password.trim() === '') {
-      setPasswordError('Please enter your password');
-      valid = false;
-    } else {
-      setPasswordError('');
-    }
+  // Password validation
+  if (password.trim() === '') {
+    setPasswordError('Please enter your password');
+    valid = false;
+  } else if (!passwordRegex.test(password)) {
+    setPasswordError('Password must be at least 8 characters and include upper, lower, number, and special character');
+    valid = false;
+  } else {
+    setPasswordError('');
+  }
 
-    if (valid) {
-      router.push('/questionnaire');
-    }
-  }}
+  if (valid) {
+    router.push('/questionnaire');
+  }
+}}
+
 >
   <Text style={[styles.buttonText, { color: '#fff' }]}>Sign up</Text>
 </TouchableOpacity>
@@ -161,6 +168,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 50,
     borderColor: '#ccc',
+    backgroundColor: '#f7fafc',
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 15,
