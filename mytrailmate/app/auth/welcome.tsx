@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     position: 'relative', 
-    backgroundColor: '#E4FDE1', 
+    backgroundColor: 'rgba(207, 233, 207, 0.95)', // Slightly transparent background
   },
   skipButton: {
     alignSelf: 'flex-end',
