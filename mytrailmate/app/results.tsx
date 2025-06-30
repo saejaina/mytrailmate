@@ -22,7 +22,6 @@ const Results = () => {
   const numericScore = parseInt(score as string);
   const percentage = Math.min(Math.max(numericScore, 0), 100);
 
-  // Circular chart sizing
   const radius = width * 0.3;
   const strokeWidth = 12;
   const circumference = 2 * Math.PI * radius;
@@ -31,13 +30,14 @@ const Results = () => {
   const getCategoryScores = () => {
     const age = parseInt(parsedData.age || '0');
     const trekCount = parseInt(parsedData.trekCount || '0');
+    const gearCount = parsedData.gear?.length || 0;
 
     return {
       Health: 25 -
         (parsedData.medicalConditions?.toLowerCase() === 'yes' ? 10 : 0) -
         (age < 16 || age > 50 ? 5 : 0),
       Gear: 25 -
-        (parsedData.gear?.toLowerCase() !== 'yes' ? 10 : 0) -
+        (gearCount < 5 ? 10 : 0) -
         (parsedData.groupGear?.toLowerCase() === 'no' ? 5 : 0),
       Experience: 25 - (trekCount < 2 ? 10 : 0),
       Planning: 25 - (parsedData.backupPlan?.toLowerCase() !== 'yes' ? 10 : 0),
@@ -83,9 +83,7 @@ const Results = () => {
             origin={`${radius + 10}, ${radius + 10}`}
           />
         </Svg>
-        <Text style={[styles.scoreText, { top: radius + 10 - 25 }]}>
-          {percentage}%
-        </Text>
+        <Text style={[styles.scoreText, { top: radius + 10 - 25 }]}> {percentage}% </Text>
       </View>
 
       <View style={styles.card}>
