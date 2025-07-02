@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Animatable from 'react-native-animatable';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
@@ -55,7 +56,12 @@ const SignIn = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAwareScrollView
+      contentContainerStyle={styles.scrollContainer}
+      enableOnAndroid
+      extraScrollHeight={10}
+      keyboardShouldPersistTaps="handled"
+    >
       <Animatable.View animation="fadeInUp" delay={200} style={styles.form}>
         <Image
           source={require('../../assets/images/welcome.png')}
@@ -87,13 +93,13 @@ const SignIn = () => {
         </TouchableOpacity>
         <Text style={styles.quote}>“Adventure begins here.”</Text>
       </Animatable.View>
-    </View>
+    </KeyboardAwareScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(207, 233, 207, 0.95)',
