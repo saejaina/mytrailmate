@@ -1,15 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert } from 'react-native';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   ScrollView,
+  TextInput,
   StyleSheet,
-  Dimensions
+  Dimensions,
+  Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+
 
 const { width } = Dimensions.get('window');
 
@@ -23,24 +25,74 @@ const topics = [
   'Emergency Contact',
 ];
 
+type RadioGroupProps = {
+  options: string[];
+  selected: string;
+  onSelect: (value: string) => void;
+};
+
+const RadioGroup: React.FC<RadioGroupProps> = ({ options, selected, onSelect }) => (
+  <View>
+    {options.map((opt, idx) => (
+      <TouchableOpacity key={idx} onPress={() => onSelect(opt)} style={styles.radioRow}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons
+            name={selected === opt ? 'radio-button-on' : 'radio-button-off'}
+            size={20}
+            color={selected === opt ? '#007aff' : '#999'}
+            style={{ marginRight: 8 }}
+          />
+          <Text style={styles.radioText}>{opt}</Text>
+        </View>
+      </TouchableOpacity>
+    ))}
+  </View>
+);
+
+const essentialGear = [
+  "Trekking Shoes",
+  "First Aid Kit",
+  "Rain Jacket",
+  "Gloves",
+  "Trekking Pole",
+  "Headlamp",
+  "Map/Compass",
+  "Sleeping Bag",
+  "Extra Clothing",
+  "Water Bottle",
+];
+
 const Questionnaire = () => {
   const router = useRouter();
   const [currentTab, setCurrentTab] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const [trekMode, setTrekMode] = useState<'solo' | 'group' | null>(null);
 
-  const [formData, setFormData] = useState({
+  type FormData = {
+    name: string;
+    emergencyName: string;
+    emergencyPhone: string;
+    groupMembers: string;
+    groupLeader: string;
+    groupSize: string;
+    groupAgeRange: string;
+    childrenOrSeniors: string;
+    guidePresent: string;
+    age: string;
+    bloodGroup: string;
+    medicalConditions: string;
+    medicalDetails: string;
+    medicalKit: string;
+    trekCount: string;
+    gear: string[];
+    groupGear: string;
+    coldSensitive: string;
+    backupPlan: string;
+    [key: string]: string | string[];
+  };
+
+  const [formData, setFormData] = useState<FormData>({
     name: '',
-    age: '',
-    bloodGroup: '',
-    medicalConditions: '',
-    medicalDetails: '',
-    medicalKit: '',
-    trekCount: '',
-    gear: '',
-    groupGear: '',
-    backupPlan: '',
-    coldSensitive: '',
     emergencyName: '',
     emergencyPhone: '',
     groupMembers: '',
@@ -48,11 +100,28 @@ const Questionnaire = () => {
     groupSize: '',
     groupAgeRange: '',
     childrenOrSeniors: '',
-    guidePresent: ''
+    guidePresent: '',
+    age: '',
+    bloodGroup: '',
+    medicalConditions: '',
+    medicalDetails: '',
+    medicalKit: '',
+    trekCount: '',
+    gear: [],
+    groupGear: '',
+    coldSensitive: '',
+    backupPlan: '',
   });
 
-  const handleChange = (key: string, value: string) => {
+  const handleChange = (key: string, value: string | any[]) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const toggleGearItem = (item: string) => {
+    const newGear = formData.gear.includes(item)
+      ? formData.gear.filter(g => g !== item)
+      : [...formData.gear, item];
+    handleChange('gear', newGear);
   };
 
   const scrollToTab = (index: number) => {
@@ -71,41 +140,36 @@ const Questionnaire = () => {
     let score = 100;
     const age = parseInt(formData.age);
     const trekCount = parseInt(formData.trekCount || '0');
-
     if (age < 16 || age > 50) score -= 10;
-    if (formData.medicalConditions.toLowerCase() === 'yes') score -= 15;
-    if (formData.gear.toLowerCase() !== 'yes') score -= 10;
-    if (formData.backupPlan.toLowerCase() !== 'yes') score -= 10;
+    if (formData.medicalConditions === 'Yes') score -= 15;
+    if (formData.backupPlan === 'No') score -= 10;
     if (trekCount < 2) score -= 15;
-    if (formData.coldSensitive.toLowerCase() === 'yes') score -= 10;
-    if (trekMode === 'group' && formData.groupGear.toLowerCase() !== 'yes') score -= 10;
-
+    if (formData.coldSensitive === 'Yes') score -= 10;
+    if (trekMode === 'group' && formData.groupGear === 'No') score -= 10;
+    if (formData.gear.length < essentialGear.length / 2) score -= 15;
     return Math.max(0, score);
   };
 
   const handleSubmit = () => {
-  // Define the fields that must be filled
-  const requiredFields = ['name', 'age', 'bloodGroup', 'medicalConditions', 'trekCount', 'gear', 'backupPlan', 'emergencyName', 'emergencyPhone'];
-  if (trekMode === 'group') {
-    requiredFields.push('groupMembers', 'groupGear');
-  }
-
-  const isValid = requiredFields.every(field => formData[field as keyof typeof formData]?.trim());
-
-  if (!isValid || !trekMode) {
-    Alert.alert('Incomplete Form', 'Please fill all required fields before submitting.');
-    return;
-  }
-
-  const riskScore = calculateRisk();
-  router.push({
-    pathname: '/results',
-    params: {
-      score: String(riskScore),
-      data: JSON.stringify(formData),
-    },
-  });
-};
+    const requiredFields = ['name', 'age', 'bloodGroup', 'medicalConditions', 'trekCount', 'backupPlan', 'emergencyName', 'emergencyPhone'];
+    if (trekMode === 'group') requiredFields.push('groupMembers', 'groupGear');
+    const isValid = requiredFields.every(field => {
+      const value = formData[field];
+      if (typeof value === 'string') {
+        return value.trim();
+      }
+      if (Array.isArray(value)) {
+        return value.length > 0;
+      }
+      return false;
+    });
+    if (!isValid || !trekMode) {
+      Alert.alert('Incomplete Form', 'Please fill all required fields before submitting.');
+      return;
+    }
+    const riskScore = calculateRisk();
+    router.push({ pathname: '/results', params: { score: String(riskScore), data: JSON.stringify(formData) } });
+  };
 
   const renderQuestions = () => {
     switch (currentTab) {
@@ -114,16 +178,10 @@ const Questionnaire = () => {
           <View>
             <Text style={styles.label}>Are you trekking solo or with a group?</Text>
             <View style={styles.toggleContainer}>
-              <TouchableOpacity
-                style={[styles.toggleButton, trekMode === 'solo' && styles.selected]}
-                onPress={() => setTrekMode('solo')}
-              >
+              <TouchableOpacity style={[styles.toggleButton, trekMode === 'solo' && styles.selected]} onPress={() => setTrekMode('solo')}>
                 <Text>Solo</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.toggleButton, trekMode === 'group' && styles.selected]}
-                onPress={() => setTrekMode('group')}
-              >
+              <TouchableOpacity style={[styles.toggleButton, trekMode === 'group' && styles.selected]} onPress={() => setTrekMode('group')}>
                 <Text>Group</Text>
               </TouchableOpacity>
             </View>
@@ -135,10 +193,9 @@ const Questionnaire = () => {
             <Text style={styles.label}>Full Name</Text>
             <TextInput style={styles.input} value={formData.name} onChangeText={text => handleChange('name', text)} />
             <Text style={styles.label}>Age</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={formData.age} onChangeText={text => handleChange('age', text)} />
+            <RadioGroup options={['<16', '16–30', '31–50', '>50']} selected={formData.age} onSelect={value => handleChange('age', value)} />
             <Text style={styles.label}>Blood Group</Text>
-            <TextInput style={styles.input} value={formData.bloodGroup} onChangeText={text => handleChange('bloodGroup', text)} />
-
+            <RadioGroup options={['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']} selected={formData.bloodGroup} onSelect={value => handleChange('bloodGroup', value)} />
             {trekMode === 'group' && (
               <>
                 <Text style={styles.label}>Group Leader Name</Text>
@@ -150,9 +207,9 @@ const Questionnaire = () => {
                 <Text style={styles.label}>Member names & ages</Text>
                 <TextInput style={styles.input} value={formData.groupMembers} onChangeText={text => handleChange('groupMembers', text)} />
                 <Text style={styles.label}>Children or seniors? (Yes/No)</Text>
-                <TextInput style={styles.input} value={formData.childrenOrSeniors} onChangeText={text => handleChange('childrenOrSeniors', text)} />
+                <RadioGroup options={['Yes', 'No']} selected={formData.childrenOrSeniors} onSelect={value => handleChange('childrenOrSeniors', value)} />
                 <Text style={styles.label}>Guide present? (Yes/No)</Text>
-                <TextInput style={styles.input} value={formData.guidePresent} onChangeText={text => handleChange('guidePresent', text)} />
+                <RadioGroup options={['Yes', 'No']} selected={formData.guidePresent} onSelect={value => handleChange('guidePresent', value)} />
               </>
             )}
           </View>
@@ -161,29 +218,47 @@ const Questionnaire = () => {
         return (
           <View>
             <Text style={styles.label}>Any medical conditions?</Text>
-            <TextInput style={styles.input} value={formData.medicalConditions} onChangeText={text => handleChange('medicalConditions', text)} />
+            <RadioGroup options={['Yes', 'No']} selected={formData.medicalConditions} onSelect={value => handleChange('medicalConditions', value)} />
             <Text style={styles.label}>If yes, specify</Text>
             <TextInput style={styles.input} value={formData.medicalDetails} onChangeText={text => handleChange('medicalDetails', text)} />
             <Text style={styles.label}>Medical Kit?</Text>
-            <TextInput style={styles.input} value={formData.medicalKit} onChangeText={text => handleChange('medicalKit', text)} />
+            <RadioGroup options={['Yes', 'No']} selected={formData.medicalKit} onSelect={value => handleChange('medicalKit', value)} />
           </View>
         );
       case 3:
         return (
           <View>
             <Text style={styles.label}>Treks completed</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={formData.trekCount} onChangeText={text => handleChange('trekCount', text)} />
+            <RadioGroup options={['0', '1', '2-5', '5+']} selected={formData.trekCount} onSelect={value => handleChange('trekCount', value)} />
           </View>
         );
       case 4:
         return (
           <View>
-            <Text style={styles.label}>Essential gear?</Text>
-            <TextInput style={styles.input} value={formData.gear} onChangeText={text => handleChange('gear', text)} />
+            <Text style={styles.label}>Select the gear you have:</Text>
+            {essentialGear.map((item, idx) => {
+  const checked = formData.gear.includes(item);
+  return (
+    <TouchableOpacity
+      key={idx}
+      onPress={() => toggleGearItem(item)}
+      style={styles.gearItemRow}
+    >
+      <Ionicons
+        name={checked ? 'checkbox-outline' : 'square-outline'}
+        size={22}
+        color={checked ? '#34c759' : '#888'}
+        style={{ marginRight: 10 }}
+      />
+      <Text style={styles.gearItemText}>{item}</Text>
+    </TouchableOpacity>
+  );
+})}
+
             {trekMode === 'group' && (
               <>
                 <Text style={styles.label}>All members have gear? (Yes/No)</Text>
-                <TextInput style={styles.input} value={formData.groupGear} onChangeText={text => handleChange('groupGear', text)} />
+                <RadioGroup options={['Yes', 'No']} selected={formData.groupGear} onSelect={value => handleChange('groupGear', value)} />
               </>
             )}
           </View>
@@ -192,9 +267,9 @@ const Questionnaire = () => {
         return (
           <View>
             <Text style={styles.label}>Cold-sensitive? (Yes/No)</Text>
-            <TextInput style={styles.input} value={formData.coldSensitive} onChangeText={text => handleChange('coldSensitive', text)} />
+            <RadioGroup options={['Yes', 'No']} selected={formData.coldSensitive} onSelect={value => handleChange('coldSensitive', value)} />
             <Text style={styles.label}>Backup plan? (Yes/No)</Text>
-            <TextInput style={styles.input} value={formData.backupPlan} onChangeText={text => handleChange('backupPlan', text)} />
+            <RadioGroup options={['Yes', 'No']} selected={formData.backupPlan} onSelect={value => handleChange('backupPlan', value)} />
           </View>
         );
       case 6:
@@ -203,7 +278,7 @@ const Questionnaire = () => {
             <Text style={styles.label}>Emergency Contact Name</Text>
             <TextInput style={styles.input} value={formData.emergencyName} onChangeText={text => handleChange('emergencyName', text)} />
             <Text style={styles.label}>Emergency Phone Number</Text>
-            <TextInput style={styles.input} value={formData.emergencyPhone} onChangeText={text => handleChange('emergencyPhone', text)} />
+            <TextInput style={styles.input} keyboardType="phone-pad" value={formData.emergencyPhone} onChangeText={text => handleChange('emergencyPhone', text)} />
           </View>
         );
       default:
@@ -271,4 +346,18 @@ const styles = StyleSheet.create({
   toggleContainer: { flexDirection: 'row', marginTop: 10 },
   toggleButton: { padding: 10, backgroundColor: '#eee', borderRadius: 8, marginRight: 10 },
   selected: { backgroundColor: '#cce5ff' },
+  checkboxRow: { marginTop: 5 },
+  radioRow: { marginTop: 5 },
+  gearItemRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginVertical: 6,
+},
+gearItemText: {
+  fontSize: 16,
+},
+radioText: {
+  fontSize: 16,
+},
+
 });
