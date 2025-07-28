@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mytrailmate",
+    "name": "MyTrailMate",
     "slug": "mytrailmate",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -37,6 +37,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+        "extra": {
+      "firebaseApiKey": "AIzaSyBFexbiD2tlOnVTsDCqep7emw4F_dYUVqI",
+      "firebaseAuthDomain": "mytrailmate-7d657.firebaseapp.com",
+      "firebaseProjectId": "mytrailmate-7d657",
+      "firebaseStorageBucket": "mytrailmate-7d657.firebasestorage.app",
+      "firebaseMessagingSenderId": "420126178092",
+      "firebaseAppId": "1:420126178092:web:672109402ecc7de448ca89"
     }
   }
 }

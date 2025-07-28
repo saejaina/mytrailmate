@@ -117,6 +117,14 @@ const Questionnaire = () => {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
+  const medicalOptions = [
+  "Asthma",
+  "Diabetes",
+  "Heart Condition",
+  "Allergies",
+  "Hypertension",
+];
+
   const toggleGearItem = (item: string) => {
     const newGear = formData.gear.includes(item)
       ? formData.gear.filter(g => g !== item)
@@ -220,7 +228,18 @@ const Questionnaire = () => {
             <Text style={styles.label}>Any medical conditions?</Text>
             <RadioGroup options={['Yes', 'No']} selected={formData.medicalConditions} onSelect={value => handleChange('medicalConditions', value)} />
             <Text style={styles.label}>If yes, specify</Text>
-            <TextInput style={styles.input} value={formData.medicalDetails} onChangeText={text => handleChange('medicalDetails', text)} />
+            <RadioGroup
+              options={medicalOptions}
+              selected={formData.medicalDetails}
+              onSelect={(value) =>{
+    if (formData.medicalDetails === value) {
+      // If the same option is clicked again, deselect it
+      handleChange('medicalDetails', '');
+    } else {
+      handleChange('medicalDetails', value);
+    }
+  }}
+            />
             <Text style={styles.label}>Medical Kit?</Text>
             <RadioGroup options={['Yes', 'No']} selected={formData.medicalKit} onSelect={value => handleChange('medicalKit', value)} />
           </View>

@@ -5,55 +5,72 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../firebaseConfig'; // make sure this is your Firebase auth export
 
 const features = [
   {
     title: 'Risk Score',
     desc: 'View your current trail risk level and get safety tips.',
     image: require('../../assets/images/risk.png'),
-    route: '/features/risk'
+    route: '/features/risk',
   },
   {
     title: 'Offline Emergency Kit',
     desc: 'Access tools like flashlight, whistle & checklist anytime.',
     image: require('../../assets/images/sos.png'),
-    route: '/features/emergency'
+    route: '/features/emergency',
   },
   {
     title: 'Offline Maps',
     desc: 'Download maps for navigation without internet.',
     image: require('../../assets/images/location.png'),
-    route: '/features/maps'
+    route: '/features/maps',
   },
   {
     title: 'Weather Forecast',
     desc: 'Get live and upcoming weather updates to plan safer and smarter treks.',
     image: require('../../assets/images/recommendation.png'),
-    route: '/features/recommend'
+    route: '/features/recommend',
   },
   {
     title: 'Badges & Awards',
     desc: 'Track your milestones and collect achievement badges.',
     image: require('../../assets/images/badges.png'),
-    route: '/features/badges'
+    route: 'tabs/badges',
   },
   {
     title: 'Trek Log / History',
     desc: 'See records of your completed treks.',
     image: require('../../assets/images/history.png'),
-    route: '/features/history'
-  }
+    route: '/features/history',
+  },
 ];
 
 export default function Dashboard() {
   const router = useRouter();
 
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.replace('/auth/welcome');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.greeting}>Welcome back, adventurer!</Text>
+      <View style={styles.header}>
+        <Text style={styles.greeting}>         Welcome back, adventurer!</Text>
+        <TouchableOpacity onPress={handleSignOut} style={styles.signOutBtn}>
+          <Ionicons name="log-out-outline" size={24} color="#1c3d5a" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.grid}>
         {features.map((item, index) => (
           <TouchableOpacity
@@ -77,17 +94,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: '#f3f8fe',
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   greeting: {
     fontSize: 20,
     fontWeight: '600',
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#1c3d5a'
+    color: '#1c3d5a',
+  },
+  signOutBtn: {
+    padding: 6,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
   },
   card: {
     width: '48%',
@@ -111,11 +135,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#2d4f6c',
-    marginBottom: 6
+    marginBottom: 6,
   },
   desc: {
     fontSize: 13,
     textAlign: 'center',
-    color: '#555'
-  }
+    color: '#555',
+  },
 });
