@@ -12,8 +12,20 @@ import {
 import { useRouter } from 'expo-router';
 import * as Animatable from 'react-native-animatable';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../firebaseConfig'; // ✅ Make sure this path is correct
+import { Ionicons } from '@expo/vector-icons';
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from 'firebase/auth';
+import { auth } from '../../firebaseConfig'; // ✅ make sure path is correct
+
+// ✅ Allowed college domains
+const collegeDomains = [
+  'academiacollege.edu.np',
+  'students.academiacollege.edu.np',
+  'abccollege.edu.np',
+  'students.abccollege.edu.np',
+];
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
@@ -21,32 +33,42 @@ const SignIn = () => {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false); // toggle login / reset
   const router = useRouter();
 
-  const handleSubmit = async () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?#&])[A-Za-z\d@$!%*?#&]{8,}$/;
+  // -------------------
+  // EMAIL VALIDATION
+  // -------------------
+  const isValidEmail = (email: string) => {
+    const publicEmailRegex = /^[a-zA-Z0-9._%+-]+@(gmail|yahoo|outlook|hotmail)\.com$/;
+    const isPublicEmail = publicEmailRegex.test(email);
+    const isCollegeEmail = collegeDomains.some((domain) =>
+      email.toLowerCase().endsWith(`@${domain}`)
+    );
+    return isPublicEmail || isCollegeEmail;
+  };
 
+  // -------------------
+  // LOGIN HANDLER
+  // -------------------
+  const handleSubmit = async () => {
     let valid = true;
 
     if (!email.trim()) {
       setEmailError('Please enter your email');
       valid = false;
-    } else if (!emailRegex.test(email)) {
-      setEmailError('Enter a valid email address');
+    } else if (!isValidEmail(email)) {
+      setEmailError(
+        'Use Gmail, Yahoo, Outlook, Hotmail, or a valid college email'
+      );
       valid = false;
     } else {
       setEmailError('');
     }
 
-    if (!password.trim()) {
+    if (!password.trim() && !forgotMode) {
       setPasswordError('Please enter your password');
-      valid = false;
-    } else if (!passwordRegex.test(password)) {
-      setPasswordError(
-        'Password must be at least 8 characters and include upper, lower, number, and special character'
-      );
       valid = false;
     } else {
       setPasswordError('');
@@ -61,8 +83,40 @@ const SignIn = () => {
       Alert.alert('Login Successful', `Welcome, ${username}!`);
       router.replace('/(tabs)/dashboard');
     } catch (error: any) {
-      console.error("Login Error:", error.message);
+      console.error('Login Error:', error.message);
       Alert.alert('Login Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // -------------------
+  // PASSWORD RESET HANDLER
+  // -------------------
+  const handlePasswordReset = async () => {
+    if (!email.trim()) {
+      setEmailError('Please enter your email');
+      return;
+    } else if (!isValidEmail(email)) {
+      setEmailError(
+        'Use Gmail, Yahoo, Outlook, Hotmail, or a valid college email'
+      );
+      return;
+    } else {
+      setEmailError('');
+    }
+
+    try {
+      setLoading(true);
+      await sendPasswordResetEmail(auth, email);
+      Alert.alert(
+        'Reset Link Sent',
+        'Check your email for password reset instructions.'
+      );
+      setForgotMode(false);
+    } catch (error: any) {
+      console.error('Password Reset Error:', error.message);
+      Alert.alert('Reset Failed', error.message);
     } finally {
       setLoading(false);
     }
@@ -80,8 +134,11 @@ const SignIn = () => {
           source={require('../../assets/images/welcome.png')}
           style={styles.logo}
         />
-        <Text style={styles.title}>Sign In to MyTrailMate</Text>
+        <Text style={styles.title}>
+          {forgotMode ? 'Reset Password' : 'Sign In to MyTrailMate'}
+        </Text>
 
+        {/* Email input */}
         <TextInput
           placeholder="Enter email"
           style={[styles.input, emailError ? styles.inputError : null]}
@@ -92,25 +149,49 @@ const SignIn = () => {
         />
         {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
-        <TextInput
-          placeholder="Enter password"
-          style={[styles.input, passwordError ? styles.inputError : null]}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        {/* Password input (only if not in forgot mode) */}
+        {!forgotMode && (
+          <View
+            style={[styles.passwordContainer, passwordError ? styles.inputError : null]}
+          >
+            <TextInput
+              placeholder="Enter password"
+              style={styles.passwordInput}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={22}
+                color="gray"
+              />
+            </TouchableOpacity>
+          </View>
+        )}
         {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
+        {/* Action button */}
         <TouchableOpacity
           style={[styles.button, loading && { backgroundColor: '#7daaf5' }]}
-          onPress={handleSubmit}
+          onPress={forgotMode ? handlePasswordReset : handleSubmit}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Log In</Text>
+            <Text style={styles.buttonText}>
+              {forgotMode ? 'Send Reset Link' : 'Log In'}
+            </Text>
           )}
+        </TouchableOpacity>
+
+        {/* Toggle link */}
+        <TouchableOpacity onPress={() => setForgotMode(!forgotMode)}>
+          <Text style={styles.linkText}>
+            {forgotMode ? '← Back to Login' : 'Forgot Password?'}
+          </Text>
         </TouchableOpacity>
 
         <Text style={styles.quote}>“Adventure begins here.”</Text>
@@ -158,6 +239,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 12,
   },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderColor: '#cbd5e0',
+    borderWidth: 1,
+    backgroundColor: '#f7fafc',
+    marginBottom: 12,
+  },
+  passwordInput: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 12,
+  },
   inputError: {
     borderColor: 'red',
   },
@@ -182,6 +278,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 17,
     fontWeight: '600',
+  },
+  linkText: {
+    color: '#007bff',
+    fontSize: 14,
+    marginTop: 12,
+    textAlign: 'center',
   },
   quote: {
     textAlign: 'center',

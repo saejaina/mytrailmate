@@ -182,6 +182,12 @@ const handleSubmit = async () => {
     return;
   }
 
+  const phoneRegex = /^98\d{8}$/;
+    if (!phoneRegex.test(formData.emergencyPhone)) {
+      Alert.alert('Invalid Phone Number', 'Please enter a valid Nepal mobile number starting with 98.');
+      return;
+    }
+
   const riskScore = calculateRisk();
 
   try {
@@ -334,7 +340,7 @@ const handleSubmit = async () => {
             <Text style={styles.label}>Emergency Contact Name</Text>
             <TextInput style={styles.input} value={formData.emergencyName} onChangeText={text => handleChange('emergencyName', text)} />
             <Text style={styles.label}>Emergency Phone Number</Text>
-            <TextInput style={styles.input} keyboardType="phone-pad" value={formData.emergencyPhone} onChangeText={text => handleChange('emergencyPhone', text)} />
+            <TextInput style={styles.input} keyboardType="phone-pad" value={formData.emergencyPhone} onChangeText={text => handleChange('emergencyPhone', text)} placeholder="98XXXXXXXX"/>
           </View>
         );
       default:

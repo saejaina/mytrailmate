@@ -13,7 +13,8 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../firebaseConfig'; // ✅ Make sure this path is correct
+import { Ionicons } from '@expo/vector-icons'; // 👈 for eye icon
+import { auth } from '../../firebaseConfig';
 
 export default function WelcomeScreen() {
   const { width } = Dimensions.get('window');
@@ -23,51 +24,63 @@ export default function WelcomeScreen() {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // 👈 toggle state
 
   const handleSignUp = async () => {
     let valid = true;
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?#&])[A-Za-z\d@$!%*?#&]{8,}$/;
+ // ✅ Allowed college domains
+  const collegeDomains = ["academiacollege.edu.np", "students.academiacollege.edu.np"];
 
-    if (!email.trim()) {
-      setEmailError('Please enter your email');
-      valid = false;
-    } else if (!emailRegex.test(email)) {
-      setEmailError('Enter a valid email address');
-      valid = false;
-    } else {
-      setEmailError('');
-    }
+  // ✅ Check if email matches public providers
+  const isPublicEmail = /^[a-zA-Z0-9._%+-]+@(gmail|yahoo|outlook|hotmail)\.com$/.test(email);
 
-    if (!password.trim()) {
-      setPasswordError('Please enter your password');
-      valid = false;
-    } else if (!passwordRegex.test(password)) {
-      setPasswordError(
-        'Password must be at least 8 characters and include upper, lower, number, and special character'
-      );
-      valid = false;
-    } else {
-      setPasswordError('');
-    }
+  // ✅ Check if email ends with a college domain
+  const isCollegeEmail = collegeDomains.some(domain => email.toLowerCase().endsWith("@" + domain));
 
-    if (!valid) return;
+  // Password rules
+  const passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?#&])[A-Za-z\d@$!%*?#&]{8,}$/;
 
-    try {
-      setLoading(true);
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const username = userCredential.user.email?.split('@')[0] ?? 'User';
-      Alert.alert('Sign Up Successful', `Welcome, ${username}!`);
-      router.replace('/questionnaire');
-    } catch (error: any) {
-      console.error('Sign Up Error:', error.message);
-      Alert.alert('Sign Up Failed', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ✅ Email validation
+  if (!email.trim()) {
+    setEmailError("Please enter your email");
+    valid = false;
+  } else if (!(isPublicEmail || isCollegeEmail)) {
+    setEmailError("Use Gmail, Yahoo, Outlook, Hotmail, or a valid college email");
+    valid = false;
+  } else {
+    setEmailError("");
+  }
+
+  // ✅ Password validation
+  if (!password.trim()) {
+    setPasswordError("Please enter your password");
+    valid = false;
+  } else if (!passwordRegex.test(password)) {
+    setPasswordError(
+      "Password must be at least 8 characters and include upper, lower, number, and special character"
+    );
+    valid = false;
+  } else {
+    setPasswordError("");
+  }
+
+  if (!valid) return;
+
+  try {
+    setLoading(true);
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const username = userCredential.user.email?.split("@")[0] ?? "User";
+    Alert.alert("Sign Up Successful", `Welcome, ${username}!`);
+    router.replace("/questionnaire");
+  } catch (error: any) {
+    console.error("Sign Up Error:", error.message);
+    Alert.alert("Sign Up Failed", error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <KeyboardAwareScrollView
@@ -91,6 +104,7 @@ export default function WelcomeScreen() {
 
           <Text style={styles.heading}>Create an Account</Text>
 
+          {/* Email Input */}
           <TextInput
             style={[styles.input, emailError ? styles.inputError : null]}
             placeholder="Enter email"
@@ -102,14 +116,24 @@ export default function WelcomeScreen() {
           />
           {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
-          <TextInput
-            style={[styles.input, passwordError ? styles.inputError : null]}
-            placeholder="Enter password"
-            placeholderTextColor="#888"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
+          {/* Password Input with Eye */}
+          <View style={[styles.passwordContainer, passwordError ? styles.inputError : null]}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Enter password"
+              placeholderTextColor="#888"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={22}
+                color="#555"
+              />
+            </TouchableOpacity>
+          </View>
           {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
           <TouchableOpacity
@@ -224,5 +248,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 10,
     marginLeft: 5,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: '#ccc',
+    backgroundColor: '#f7fafc',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    height: 50,
+    marginBottom: 15,
+  },
+  passwordInput: {
+    flex: 1,
+    fontSize: 16,
   },
 });
