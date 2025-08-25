@@ -32,7 +32,7 @@ const features = [
     title: 'Offline Maps',
     desc: 'Download maps for navigation without internet.',
     image: require('../../assets/images/location.png'),
-    route: '/maps',
+    route: '/map',
   },
   {
     title: 'Weather Forecast',
@@ -50,7 +50,7 @@ const features = [
     title: 'Trek Log / History',
     desc: 'See records of your completed treks.',
     image: require('../../assets/images/history.png'),
-    route: 'history',
+    route: 'log',
   },
 ];
 
@@ -179,7 +179,7 @@ export default function Dashboard() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 70,
+    paddingTop: 50,
     paddingHorizontal: 16,
     backgroundColor: '#f3f8fe',
   },
