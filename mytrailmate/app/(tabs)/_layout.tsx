@@ -9,7 +9,10 @@ export default function TabLayout() {
       <Stack>
         <Stack.Screen name="home" options={{ headerShown: false }} />
         <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-        <Stack.Screen name="sos" options={{ headerShown: false }} />
+        <Stack.Screen name="kit" options={{ headerShown: false }} />
+        <Stack.Screen name="weather" options={{ headerShown: false }} />
+        <Stack.Screen name="badges" options={{ headerShown: false }} />
+
 
        <Tabs>
       <Tabs.Screen

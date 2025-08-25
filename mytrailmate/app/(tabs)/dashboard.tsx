@@ -7,56 +7,57 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../../firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
-import * as SMS from 'expo-sms';
+import { doc, getDoc, collection, addDoc, Timestamp } from 'firebase/firestore';
 
 const features = [
   {
     title: 'Risk Score',
     desc: 'View your current trail risk level and get safety tips.',
     image: require('../../assets/images/risk.png'),
-    route: '/features/risk',
+    route: '../questionnaire',
   },
   {
     title: 'Offline Emergency Kit',
     desc: 'Access tools like flashlight, whistle & checklist anytime.',
     image: require('../../assets/images/sos.png'),
-    route: '/features/emergency',
+    route: '/kit',
   },
   {
     title: 'Offline Maps',
     desc: 'Download maps for navigation without internet.',
     image: require('../../assets/images/location.png'),
-    route: '/features/maps',
+    route: '/maps',
   },
   {
     title: 'Weather Forecast',
     desc: 'Get live and upcoming weather updates to plan safer and smarter treks.',
     image: require('../../assets/images/recommendation.png'),
-    route: '/features/recommend',
+    route: '/weather',
   },
   {
     title: 'Badges & Awards',
     desc: 'Track your milestones and collect achievement badges.',
     image: require('../../assets/images/badges.png'),
-    route: 'tabs/badges',
+    route: 'badges',
   },
   {
     title: 'Trek Log / History',
     desc: 'See records of your completed treks.',
     image: require('../../assets/images/history.png'),
-    route: '/features/history',
+    route: 'history',
   },
 ];
 
 export default function Dashboard() {
   const router = useRouter();
   const [emergencyNumber, setEmergencyNumber] = useState<string | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -90,7 +91,7 @@ export default function Dashboard() {
   }, []);
 
   // -------------------
-  // SOS HANDLER
+  // SOS HANDLER (Demo for Mobile Preview)
   // -------------------
   const handleSOS = async () => {
     const user = auth.currentUser;
@@ -104,26 +105,21 @@ export default function Dashboard() {
       return;
     }
 
-    // Validate phone number
-    const phoneRegex = /^\+?[0-9]{7,15}$/;
-    if (!phoneRegex.test(emergencyNumber)) {
-      Alert.alert('Invalid Number', 'Emergency contact is not a valid phone number.');
-      return;
-    }
-
-    const message = `🚨 SOS Alert! ${user.email} is in emergency. Please contact immediately.`;
-
+    // Log SOS alert to Firestore
     try {
-      const isAvailable = await SMS.isAvailableAsync();
-      if (!isAvailable) {
-        Alert.alert('Error', 'SMS is not available on this device.');
-        return;
-      }
+      await addDoc(collection(db, 'sosAlerts'), {
+        contact: emergencyNumber,
+        timestamp: Timestamp.now(),
+        status: 'sent',
+      });
 
-      await SMS.sendSMSAsync([emergencyNumber], message);
-      Alert.alert('SOS Sent', `Emergency message sent to ${emergencyNumber}`);
-    } catch (error: any) {
-      console.error('SOS Error:', error.message);
+      // Show alert
+      Alert.alert('📩 SOS Sent', `Emergency message sent to ${emergencyNumber}`);
+
+      // Show dummy modal popup
+      setModalVisible(true);
+    } catch (error) {
+      console.error('SOS Error:', error);
       Alert.alert('Error', 'Failed to send SOS.');
     }
   };
@@ -131,27 +127,52 @@ export default function Dashboard() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>Welcome back, adventurer!</Text>
+        <Text style={styles.greeting}>    Welcome Back Adventurer !</Text>
         <TouchableOpacity onPress={handleSignOut} style={styles.signOutBtn}>
-          <Ionicons name="log-out-outline" size={24} color="#1c3d5a" />
+          <Ionicons name="log-out-outline" size={28} color="#1c3d5a" />
         </TouchableOpacity>
       </View>
 
-      {/* SOS Button */}
-      <TouchableOpacity style={styles.sosButton} onPress={handleSOS}>
-        <Ionicons name="alert-circle" size={28} color="#fff" />
-        <Text style={styles.sosText}>SOS</Text>
-      </TouchableOpacity>
-
       <View style={styles.grid}>
         {features.map((item, index) => (
-          <TouchableOpacity key={index} style={styles.card}>
+          <TouchableOpacity key={index} style={styles.card} onPress={() => router.push(item.route as any)} >
             <Image source={item.image} style={styles.icon} />
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.desc}>{item.desc}</Text>
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* SOS Button */}
+      <View style={{ alignItems: 'center', marginBottom: 30 }}>
+        <TouchableOpacity style={[styles.sosButton, { width: 150 }]} onPress={handleSOS}>
+          <Ionicons name="alert-circle" size={33} color="#fff" />
+          <Text style={styles.sosText}>SOS</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Dummy Modal Popup */}
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={modalStyles.modalContainer}>
+          <View style={modalStyles.modalBox}>
+            <Text style={modalStyles.modalText}>📩 SOS Message Sent!</Text>
+            <Text style={modalStyles.modalSubText}>
+              Your emergency contact ({emergencyNumber}) has been notified.
+            </Text>
+            <TouchableOpacity
+              style={modalStyles.closeButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={modalStyles.closeButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -181,7 +202,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
   },
   sosText: {
     color: '#fff',
@@ -222,5 +242,44 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     color: '#555',
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalBox: {
+    width: 300,
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 20,
+    alignItems: 'center',
+    elevation: 10,
+  },
+  modalText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalSubText: {
+    fontSize: 16,
+    color: 'gray',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  closeButton: {
+    backgroundColor: 'red',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
