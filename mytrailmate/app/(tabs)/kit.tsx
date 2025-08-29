@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   },
   backText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 17,
     marginLeft: 10,
     fontWeight: '600',
   },
