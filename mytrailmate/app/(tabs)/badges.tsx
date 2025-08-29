@@ -285,7 +285,9 @@ const Badges = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 30,
-    backgroundColor: '#fff',
+    backgroundColor: '#F0F9FF',
+        paddingTop: 60,
+
     flexGrow: 1,
   },
   title: {

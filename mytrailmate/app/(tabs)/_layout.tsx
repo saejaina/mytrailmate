@@ -14,6 +14,7 @@ export default function TabLayout() {
         <Stack.Screen name="badges" options={{ headerShown: false }} />
         <Stack.Screen name="map" options={{ headerShown: false }} />
         <Stack.Screen name="log" options={{ headerShown: false }} />
+        <Stack.Screen name="sosConfirm" options={{ headerShown: false }} />
        <Tabs>
       <Tabs.Screen
         name="home"

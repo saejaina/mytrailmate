@@ -6,58 +6,26 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Alert,
-  Modal,
+  Vibration,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
-import { auth, db } from '../../firebaseConfig';
-import { collection, getDocs, query, where, orderBy, limit, addDoc, Timestamp } from 'firebase/firestore';
+import { auth } from '../../firebaseConfig';
+import Toast from 'react-native-toast-message';
 
 const features = [
-  {
-    title: 'Risk Score',
-    desc: 'View your current trail risk level and get safety tips.',
-    image: require('../../assets/images/risk.png'),
-    route: '../questionnaire',
-  },
-  {
-    title: 'Offline Emergency Kit',
-    desc: 'Access tools like flashlight, whistle & checklist anytime.',
-    image: require('../../assets/images/sos.png'),
-    route: '/kit',
-  },
-  {
-    title: 'Offline Maps',
-    desc: 'Download maps for navigation without internet.',
-    image: require('../../assets/images/location.png'),
-    route: '/map',
-  },
-  {
-    title: 'Weather Forecast',
-    desc: 'Get live and upcoming weather updates to plan safer and smarter treks.',
-    image: require('../../assets/images/recommendation.png'),
-    route: '/weather',
-  },
-  {
-    title: 'Badges & Awards',
-    desc: 'Track your milestones and collect achievement badges.',
-    image: require('../../assets/images/badges.png'),
-    route: 'badges',
-  },
-  {
-    title: 'Trek Log / History',
-    desc: 'See records of your completed treks.',
-    image: require('../../assets/images/history.png'),
-    route: 'log',
-  },
+  { title: 'Risk Score', desc: 'View your current trail risk level and get safety tips.', image: require('../../assets/images/risk.png'), route: '../questionnaire' },
+  { title: 'Offline Emergency Kit', desc: 'Access tools like flashlight, whistle & checklist anytime.', image: require('../../assets/images/sos.png'), route: '/kit' },
+  { title: 'Offline Maps', desc: 'Download maps for navigation without internet.', image: require('../../assets/images/location.png'), route: '/map' },
+  { title: 'Weather Forecast', desc: 'Get live and upcoming weather updates to plan safer and smarter treks.', image: require('../../assets/images/recommendation.png'), route: '/weather' },
+  { title: 'Badges & Awards', desc: 'Track your milestones and collect achievement badges.', image: require('../../assets/images/badges.png'), route: 'badges' },
+  { title: 'Trek Log / History', desc: 'See records of your completed treks.', image: require('../../assets/images/history.png'), route: 'log' },
 ];
 
 export default function Dashboard() {
   const router = useRouter();
-  const [emergencyNumber, setEmergencyNumber] = useState<string | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [sosSent, setSosSent] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -68,70 +36,32 @@ export default function Dashboard() {
     }
   };
 
-  // Fetch emergency contact from latest questionnaire
-  const fetchEmergencyNumber = async () => {
-    try {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const qRef = collection(db, 'questionnaires');
-      const qSnap = await getDocs(
-        query(qRef, where('userId', '==', user.uid), orderBy('submittedAt', 'desc'), limit(1))
-      );
-
-      if (!qSnap.empty) {
-        const latestQ = qSnap.docs[0].data();
-        setEmergencyNumber(latestQ.emergencyPhone || null);
-      }
-    } catch (error) {
-      console.error('Failed to fetch emergency contact:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchEmergencyNumber();
-  }, []);
-
   // -------------------------
   // SOS Button Handler
   // -------------------------
-  const handleSOS = async () => {
-    try {
-      const user = auth.currentUser;
-      if (!user) return Alert.alert('Error', 'User not logged in.');
+  const handleSOS = () => {
+    setSosSent(true);
+    Vibration.vibrate(500);
 
-      if (!emergencyNumber) return Alert.alert('No emergency contact', 'Submit your questionnaire first.');
+    // Toast confirmation
+    Toast.show({
+      type: 'success',
+      text1: '🚨 SOS Alert Sent!',
+      text2: 'Your emergency contact has been notified.',
+      visibilityTime: 3000,
+    });
+    
 
-      const qRef = collection(db, 'questionnaires');
-      const qSnap = await getDocs(
-        query(qRef, where('userId', '==', user.uid), orderBy('submittedAt', 'desc'), limit(1))
-      );
-
-      if (qSnap.empty) return Alert.alert('No questionnaire found', 'Submit your questionnaire first.');
-
-      const latestQ = qSnap.docs[0].data();
-      const sosData = {
-        userId: user.uid,
-        userEmail: latestQ.userEmail || user.email || 'no-email',
-        emergencyNumber: latestQ.emergencyPhone || 'no-phone',
-        timestamp: Timestamp.now(),
-        status: 'sent',
-      };
-
-      await addDoc(collection(db, 'sosAlerts'), sosData);
-      console.log('SOS info saved to Firestore:', sosData);
-
-      setModalVisible(true);
-    } catch (error) {
-      console.error('Failed to send SOS:', error);
-      Alert.alert('Error', 'Failed to send SOS. Check console.');
-    }
-  };
+    // Navigate to confirmation screen
+    setTimeout(() => {
+    router.push('../sosConfirm');
+  }, 2000);
+};
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>Welcome Back Adventurer!</Text>
+        <Text style={styles.greeting}>     Welcome Back Adventurer!</Text>
         <TouchableOpacity onPress={handleSignOut} style={styles.signOutBtn}>
           <Ionicons name="log-out-outline" size={28} color="#1c3d5a" />
         </TouchableOpacity>
@@ -154,36 +84,15 @@ export default function Dashboard() {
       {/* SOS Button */}
       <View style={{ alignItems: 'center', marginBottom: 30 }}>
         <TouchableOpacity
-          style={[styles.sosButton, { width: 150 }]}
+          style={[styles.sosButton, sosSent && styles.sosButtonSent, { width: 150 }]}
           onPress={handleSOS}
         >
           <Ionicons name="alert-circle" size={33} color="#fff" />
-          <Text style={styles.sosText}>SOS</Text>
+          <Text style={styles.sosText}>{sosSent ? 'Sent' : 'SOS'}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Confirmation Modal */}
-      <Modal
-        transparent={true}
-        animationType="fade"
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={modalStyles.modalContainer}>
-          <View style={modalStyles.modalBox}>
-            <Text style={modalStyles.modalText}>📩 SOS Message Sent!</Text>
-            <Text style={modalStyles.modalSubText}>
-              Your emergency contact ({emergencyNumber}) has been notified.
-            </Text>
-            <TouchableOpacity
-              style={modalStyles.closeButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={modalStyles.closeButtonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <Toast />
     </ScrollView>
   );
 }
@@ -191,22 +100,14 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: { paddingTop: 50, paddingHorizontal: 16, backgroundColor: '#f3f8fe' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  greeting: { fontSize: 20, fontWeight: '600', color: '#1c3d5a' },
+  greeting: { fontSize: 21, fontWeight: '600', color: '#1c3d5a' },
   signOutBtn: { padding: 6 },
   sosButton: { flexDirection: 'row', backgroundColor: '#ff4d4d', padding: 14, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  sosButtonSent: { backgroundColor: '#28a745' }, // green after pressed
   sosText: { color: '#fff', fontWeight: '700', fontSize: 18, marginLeft: 10 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   card: { width: '48%', backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 16, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 2 },
   icon: { width: 48, height: 48, marginBottom: 10 },
   title: { fontSize: 16, fontWeight: '600', color: '#2d4f6c', marginBottom: 6 },
   desc: { fontSize: 13, textAlign: 'center', color: '#555' },
-});
-
-const modalStyles = StyleSheet.create({
-  modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalBox: { width: 300, backgroundColor: 'white', borderRadius: 15, padding: 20, alignItems: 'center', elevation: 10 },
-  modalText: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
-  modalSubText: { fontSize: 16, color: 'gray', marginBottom: 20, textAlign: 'center' },
-  closeButton: { backgroundColor: 'red', paddingVertical: 10, paddingHorizontal: 30, borderRadius: 10 },
-  closeButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
 });
