@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,8 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
-import { auth } from '../../firebaseConfig';
+import { auth, db } from '../../firebaseConfig';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import Toast from 'react-native-toast-message';
 
 const features = [
@@ -39,24 +40,53 @@ export default function Dashboard() {
   // -------------------------
   // SOS Button Handler
   // -------------------------
-  const handleSOS = () => {
+  const handleSOS = async () => {
     setSosSent(true);
     Vibration.vibrate(500);
 
-    // Toast confirmation
-    Toast.show({
-      type: 'success',
-      text1: '🚨 SOS Alert Sent!',
-      text2: 'Your emergency contact has been notified.',
-      visibilityTime: 3000,
-    });
-    
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        Toast.show({
+          type: 'error',
+          text1: '⚠️ Not Logged In',
+          text2: 'Please log in to send SOS alerts.',
+          visibilityTime: 3000,
+        });
+        return;
+      }
 
-    // Navigate to confirmation screen
-    setTimeout(() => {
-    router.push('../sosConfirm');
-  }, 2000);
-};
+      // Create SOS alert in Firestore
+      await addDoc(collection(db, 'sosAlerts'), {
+        userId: user.uid,
+        userEmail: user.email,
+        sosStatus: 'active',
+        createdAt: Timestamp.now(),
+      });
+
+      // Toast confirmation
+      Toast.show({
+        type: 'success',
+        text1: '🚨 SOS Alert Sent!',
+        text2: 'Your emergency contact has been notified.',
+        visibilityTime: 3000,
+      });
+
+      // Navigate to confirmation screen
+      setTimeout(() => {
+        router.push('../sosConfirm');
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error saving SOS alert:', error);
+      Toast.show({
+        type: 'error',
+        text1: '❌ Failed to Send SOS',
+        text2: 'Please try again later.',
+        visibilityTime: 3000,
+      });
+    }
+  };
 
   return (
     <ScrollView style={styles.container}>
