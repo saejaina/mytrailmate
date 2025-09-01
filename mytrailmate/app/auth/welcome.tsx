@@ -73,7 +73,10 @@ export default function WelcomeScreen() {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const username = userCredential.user.email?.split("@")[0] ?? "User";
     Alert.alert("Sign Up Successful", `Welcome, ${username}!`);
-    router.replace("/questionnaire");
+   router.replace({
+  pathname: '/questionnaire',
+  params: { isNewUser: 'true' }, // pass new user flag
+});
   } catch (error: any) {
     console.error("Sign Up Error:", error.message);
     Alert.alert("Sign Up Failed", error.message);
