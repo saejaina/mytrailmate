@@ -356,7 +356,7 @@ const Questionnaire = () => {
         {/* Save & Continue */}
         {currentTab < topics.length - 1 && (
           <TouchableOpacity style={styles.saveButton} onPress={() => setCurrentTab(prev => prev + 1)}>
-            <Text style={styles.saveButtonText}>Save & Continue</Text>
+            <Text style={styles.saveButtonText}>Next</Text>
           </TouchableOpacity>
         )}
 
