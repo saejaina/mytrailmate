@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
   View,
   Text,
@@ -13,7 +13,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { db, auth } from '@/firebaseConfig';
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
-
 
 const { width } = Dimensions.get('window');
 
@@ -66,6 +65,9 @@ const essentialGear = [
 
 const Questionnaire = () => {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const isNewUser = params?.isNewUser === 'true';
+
   const [currentTab, setCurrentTab] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const [trekMode, setTrekMode] = useState<'solo' | 'group' | null>(null);
@@ -120,12 +122,12 @@ const Questionnaire = () => {
   };
 
   const medicalOptions = [
-  "Asthma",
-  "Diabetes",
-  "Heart Condition",
-  "Allergies",
-  "Hypertension",
-];
+    "Asthma",
+    "Diabetes",
+    "Heart Condition",
+    "Allergies",
+    "Hypertension",
+  ];
 
   const toggleGearItem = (item: string) => {
     const newGear = formData.gear.includes(item)
@@ -160,61 +162,64 @@ const Questionnaire = () => {
     return Math.max(0, score);
   };
 
-const handleSubmit = async () => {
-  const requiredFields = [
-    'name', 'age', 'bloodGroup', 'medicalConditions',
-    'trekCount', 'backupPlan', 'emergencyName', 'emergencyPhone'
-  ];
+  const handleSubmit = async () => {
+    const requiredFields = [
+      'name', 'age', 'bloodGroup', 'medicalConditions',
+      'trekCount', 'backupPlan', 'emergencyName', 'emergencyPhone'
+    ];
 
-  if (trekMode === 'group') {
-    requiredFields.push('groupMembers', 'groupGear');
-  }
+    if (trekMode === 'group') {
+      requiredFields.push('groupMembers', 'groupGear');
+    }
 
-  const isValid = requiredFields.every(field => {
-    const value = formData[field];
-    if (typeof value === 'string') return value.trim();
-    if (Array.isArray(value)) return value.length > 0;
-    return false;
-  });
+    const isValid = requiredFields.every(field => {
+      const value = formData[field];
+      if (typeof value === 'string') return value.trim();
+      if (Array.isArray(value)) return value.length > 0;
+      return false;
+    });
 
-  if (!isValid || !trekMode) {
-    Alert.alert('Incomplete Form', 'Please fill all required fields before submitting.');
-    return;
-  }
-
-  const riskScore = calculateRisk();
-
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      Alert.alert('Not Logged In', 'Please log in before submitting.');
+    if (!isValid || !trekMode) {
+      Alert.alert('Incomplete Form', 'Please fill all required fields before submitting.');
       return;
     }
 
-    await addDoc(collection(db, 'questionnaires'), {
-      ...formData,
-      trekMode,
-      riskScore,
-      userId: user.uid,
-      userEmail: user.email,
-      submittedAt: Timestamp.now(),
-    });
+    const phoneRegex = /^98\d{8}$/;
+    if (!phoneRegex.test(formData.emergencyPhone)) {
+      Alert.alert('Invalid Phone Number', 'Please enter a valid Nepal mobile number starting with 98.');
+      return;
+    }
 
-    router.push({
-      pathname: '/results',
-      params: {
-        score: String(riskScore),
-        data: JSON.stringify(formData),
-      },
-    });
-  } catch (error) {
-    console.error('❌ Firestore write error:', error);
-    Alert.alert('Error', 'Failed to submit. Please try again.');
-  }
-};
+    const riskScore = calculateRisk();
 
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert('Not Logged In', 'Please log in before submitting.');
+        return;
+      }
 
+      await addDoc(collection(db, 'questionnaires'), {
+        ...formData,
+        trekMode,
+        riskScore,
+        userId: user.uid,
+        userEmail: user.email,
+        submittedAt: Timestamp.now(),
+      });
 
+      router.push({
+        pathname: '/results',
+        params: {
+          score: String(riskScore),
+          data: JSON.stringify(formData),
+        },
+      });
+    } catch (error) {
+      console.error('❌ Firestore write error:', error);
+      Alert.alert('Error', 'Failed to submit. Please try again.');
+    }
+  };
 
   const renderQuestions = () => {
     switch (currentTab) {
@@ -269,13 +274,9 @@ const handleSubmit = async () => {
               options={medicalOptions}
               selected={formData.medicalDetails}
               onSelect={(value) =>{
-    if (formData.medicalDetails === value) {
-      // If the same option is clicked again, deselect it
-      handleChange('medicalDetails', '');
-    } else {
-      handleChange('medicalDetails', value);
-    }
-  }}
+                if (formData.medicalDetails === value) handleChange('medicalDetails', '');
+                else handleChange('medicalDetails', value);
+              }}
             />
             <Text style={styles.label}>Medical Kit?</Text>
             <RadioGroup options={['Yes', 'No']} selected={formData.medicalKit} onSelect={value => handleChange('medicalKit', value)} />
@@ -293,24 +294,19 @@ const handleSubmit = async () => {
           <View>
             <Text style={styles.label}>Select the gear you have:</Text>
             {essentialGear.map((item, idx) => {
-  const checked = formData.gear.includes(item);
-  return (
-    <TouchableOpacity
-      key={idx}
-      onPress={() => toggleGearItem(item)}
-      style={styles.gearItemRow}
-    >
-      <Ionicons
-        name={checked ? 'checkbox-outline' : 'square-outline'}
-        size={22}
-        color={checked ? '#34c759' : '#888'}
-        style={{ marginRight: 10 }}
-      />
-      <Text style={styles.gearItemText}>{item}</Text>
-    </TouchableOpacity>
-  );
-})}
-
+              const checked = formData.gear.includes(item);
+              return (
+                <TouchableOpacity key={idx} onPress={() => toggleGearItem(item)} style={styles.gearItemRow}>
+                  <Ionicons
+                    name={checked ? 'checkbox-outline' : 'square-outline'}
+                    size={22}
+                    color={checked ? '#34c759' : '#888'}
+                    style={{ marginRight: 10 }}
+                  />
+                  <Text style={styles.gearItemText}>{item}</Text>
+                </TouchableOpacity>
+              );
+            })}
             {trekMode === 'group' && (
               <>
                 <Text style={styles.label}>All members have gear? (Yes/No)</Text>
@@ -334,7 +330,7 @@ const handleSubmit = async () => {
             <Text style={styles.label}>Emergency Contact Name</Text>
             <TextInput style={styles.input} value={formData.emergencyName} onChangeText={text => handleChange('emergencyName', text)} />
             <Text style={styles.label}>Emergency Phone Number</Text>
-            <TextInput style={styles.input} keyboardType="phone-pad" value={formData.emergencyPhone} onChangeText={text => handleChange('emergencyPhone', text)} />
+            <TextInput style={styles.input} keyboardType="phone-pad" value={formData.emergencyPhone} onChangeText={text => handleChange('emergencyPhone', text)} placeholder="98XXXXXXXX"/>
           </View>
         );
       default:
@@ -356,17 +352,42 @@ const handleSubmit = async () => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {renderQuestions()}
 
+       
+        {/* Save & Continue */}
         {currentTab < topics.length - 1 && (
           <TouchableOpacity style={styles.saveButton} onPress={() => setCurrentTab(prev => prev + 1)}>
-            <Text style={styles.saveButtonText}>Save & Continue</Text>
+            <Text style={styles.saveButtonText}>Next</Text>
           </TouchableOpacity>
         )}
 
+        {/* Submit */}
         {currentTab === topics.length - 1 && (
           <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
             <Text style={styles.submitButtonText}>Submit</Text>
           </TouchableOpacity>
         )}
+
+         {/* Back Buttons */}
+        {currentTab === 0 && (
+          <TouchableOpacity
+            style={[styles.saveButton, { backgroundColor: '#524f4fff', marginTop: 15 }]}
+            onPress={() => {
+              if (isNewUser) router.replace('/auth/welcome');
+              else router.replace('/(tabs)/dashboard');
+            }}
+          >
+            <Text style={styles.saveButtonText}>Back</Text>
+          </TouchableOpacity>
+        )}
+        {currentTab > 0 && (
+          <TouchableOpacity
+            style={[styles.saveButton, { backgroundColor: '#555', marginTop: 15 }]}
+            onPress={() => setCurrentTab(prev => prev - 1)}
+          >
+            <Text style={styles.saveButtonText}>Back</Text>
+          </TouchableOpacity>
+        )}
+
       </ScrollView>
     </View>
   );
@@ -384,36 +405,17 @@ const styles = StyleSheet.create({
   underline: { marginTop: 4, height: 2, width: 40, backgroundColor: '#2c8ef4', borderRadius: 5 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 100 },
   label: { fontSize: 16, marginTop: 12, marginBottom: 6, fontWeight: '500' },
-  input: {
-    borderWidth: 1, borderColor: '#ccc', backgroundColor: '#fff',
-    borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
-    fontSize: 16, marginBottom: 10
-  },
-  saveButton: {
-    marginTop: 30, backgroundColor: '#2c8ef4',
-    paddingVertical: 12, borderRadius: 10, alignItems: 'center',
-  },
+  input: { borderWidth: 1, borderColor: '#ccc', backgroundColor: '#fff', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, marginBottom: 10 },
+  saveButton: { marginTop: 30, backgroundColor: '#2c8ef4', paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
   saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  submitButton: {
-    marginTop: 15, backgroundColor: '#34c759',
-    paddingVertical: 12, borderRadius: 10, alignItems: 'center',
-  },
+  submitButton: { marginTop: 15, backgroundColor: '#34c759', paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
   submitButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   toggleContainer: { flexDirection: 'row', marginTop: 10 },
   toggleButton: { padding: 10, backgroundColor: '#eee', borderRadius: 8, marginRight: 10 },
   selected: { backgroundColor: '#cce5ff' },
   checkboxRow: { marginTop: 5 },
   radioRow: { marginTop: 5 },
-  gearItemRow: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginVertical: 6,
-},
-gearItemText: {
-  fontSize: 16,
-},
-radioText: {
-  fontSize: 16,
-},
-
+  gearItemRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 6 },
+  gearItemText: { fontSize: 16 },
+  radioText: { fontSize: 16 },
 });

@@ -11,10 +11,11 @@ import {
   Animated,
   Switch,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, AntDesign } from '@expo/vector-icons';
 import ConfettiCannon from 'react-native-confetti-cannon';
+import { router } from 'expo-router';
 
-const avatars = {
+const avatars: { [key: string]: any } = {
   Aayush: require('../../assets/avatars/avatar1.png'),
   Saejaina: require('../../assets/avatars/avatar2.png'),
   Riya: require('../../assets/avatars/avatar3.png'),
@@ -97,11 +98,11 @@ const badgeCategories = {
 
 const leaderboardData = [
   { name: 'Aayush', treks: 14 },
-  { name: 'Saejaina', treks: 12 },
+  { name: 'Sairaa', treks: 12 },
   { name: 'Riya', treks: 10 },
 ];
 
-const ProgressBar = ({ current, max }) => {
+const ProgressBar = ({ current, max }: { current: number; max: number }) => {
   const progress = Math.min(current / max, 1);
   const widthAnim = useRef(new Animated.Value(0)).current;
 
@@ -124,17 +125,28 @@ const ProgressBar = ({ current, max }) => {
   );
 };
 
+type Badge = {
+  id: string;
+  title: string;
+  description: string;
+  icon: any;
+  earned: boolean;
+  progressCurrent: number;
+  progressMax: number;
+  earnDetails: string;
+};
+
 const Badges = () => {
-  const [selectedBadge, setSelectedBadge] = useState(null);
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const { width } = useWindowDimensions();
-  const confettiRef = useRef(null);
+  const confettiRef = useRef<ConfettiCannon>(null);
   const modalScale = useRef(new Animated.Value(0)).current;
 
-  const allBadges = Object.values(badgeCategories).flat();
+  const allBadges: Badge[] = Object.values(badgeCategories).flat();
 
-  const openBadge = (badge) => {
+  const openBadge = (badge: Badge) => {
     setSelectedBadge(badge);
     setModalVisible(true);
     Animated.spring(modalScale, {
@@ -196,7 +208,7 @@ const Badges = () => {
         <View style={styles.leaderboardBox}>
           <Text style={styles.sectionTitle}>Top Trekkers</Text>
           {leaderboardData.map((user, idx) => {
-            const isCurrentUser = user.name === 'Saejaina';
+            const isCurrentUser = user.name === 'Sairaa';
             const progressPercent = (user.treks / 20) > 1 ? 1 : (user.treks / 20);
 
             return (
@@ -258,20 +270,37 @@ const Badges = () => {
         ref={confettiRef}
         fadeOut
       />
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => router.push('/(tabs)/dashboard')}
+      >
+        <AntDesign name="arrowleft" size={18} color="#fff" />
+        <Text style={styles.backText}>Back to Dashboard</Text>
+      </TouchableOpacity>
     </ScrollView>
+    
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    backgroundColor: '#fff',
+    padding: 30,
+    backgroundColor: '#F0F9FF',
+        paddingTop: 60,
+
+    flexGrow: 1,
   },
   title: {
     fontSize: 26,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#333',
   },
   gridContainer: {
     flexDirection: 'column',
@@ -418,6 +447,22 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#4ade80',
     marginBottom: 8,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2C8EF4',
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+    borderRadius: 8,
+    alignSelf: 'center',
+    marginTop: 10,
+  },
+  backText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+    marginLeft: 8,
   },
 });
 
