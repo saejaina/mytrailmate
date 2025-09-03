@@ -7,19 +7,23 @@ import {
   StyleSheet,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Animatable from 'react-native-animatable';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../firebaseConfig'; // ✅ Make sure this path is correct
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const passwordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?#&])[A-Za-z\d@$!%*?#&]{8,}$/;
@@ -48,10 +52,19 @@ const SignIn = () => {
       setPasswordError('');
     }
 
-    if (valid) {
-      const username = email.split('@')[0];
+    if (!valid) return;
+
+    try {
+      setLoading(true);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const username = userCredential.user.email?.split('@')[0] ?? 'User';
       Alert.alert('Login Successful', `Welcome, ${username}!`);
-      router.push('/(tabs)/dashboard');
+      router.replace('/(tabs)/dashboard');
+    } catch (error: any) {
+      console.error("Login Error:", error.message);
+      Alert.alert('Login Failed', error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -88,9 +101,18 @@ const SignIn = () => {
         />
         {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
-        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-          <Text style={styles.buttonText}>Log In</Text>
+        <TouchableOpacity
+          style={[styles.button, loading && { backgroundColor: '#7daaf5' }]}
+          onPress={handleSubmit}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Log In</Text>
+          )}
         </TouchableOpacity>
+
         <Text style={styles.quote}>“Adventure begins here.”</Text>
       </Animatable.View>
     </KeyboardAwareScrollView>

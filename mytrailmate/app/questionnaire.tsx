@@ -11,6 +11,8 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { db, auth } from '@/firebaseConfig';
+import { addDoc, collection, Timestamp } from 'firebase/firestore';
 
 
 const { width } = Dimensions.get('window');
@@ -117,6 +119,14 @@ const Questionnaire = () => {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
+  const medicalOptions = [
+  "Asthma",
+  "Diabetes",
+  "Heart Condition",
+  "Allergies",
+  "Hypertension",
+];
+
   const toggleGearItem = (item: string) => {
     const newGear = formData.gear.includes(item)
       ? formData.gear.filter(g => g !== item)
@@ -150,26 +160,61 @@ const Questionnaire = () => {
     return Math.max(0, score);
   };
 
-  const handleSubmit = () => {
-    const requiredFields = ['name', 'age', 'bloodGroup', 'medicalConditions', 'trekCount', 'backupPlan', 'emergencyName', 'emergencyPhone'];
-    if (trekMode === 'group') requiredFields.push('groupMembers', 'groupGear');
-    const isValid = requiredFields.every(field => {
-      const value = formData[field];
-      if (typeof value === 'string') {
-        return value.trim();
-      }
-      if (Array.isArray(value)) {
-        return value.length > 0;
-      }
-      return false;
-    });
-    if (!isValid || !trekMode) {
-      Alert.alert('Incomplete Form', 'Please fill all required fields before submitting.');
+const handleSubmit = async () => {
+  const requiredFields = [
+    'name', 'age', 'bloodGroup', 'medicalConditions',
+    'trekCount', 'backupPlan', 'emergencyName', 'emergencyPhone'
+  ];
+
+  if (trekMode === 'group') {
+    requiredFields.push('groupMembers', 'groupGear');
+  }
+
+  const isValid = requiredFields.every(field => {
+    const value = formData[field];
+    if (typeof value === 'string') return value.trim();
+    if (Array.isArray(value)) return value.length > 0;
+    return false;
+  });
+
+  if (!isValid || !trekMode) {
+    Alert.alert('Incomplete Form', 'Please fill all required fields before submitting.');
+    return;
+  }
+
+  const riskScore = calculateRisk();
+
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert('Not Logged In', 'Please log in before submitting.');
       return;
     }
-    const riskScore = calculateRisk();
-    router.push({ pathname: '/results', params: { score: String(riskScore), data: JSON.stringify(formData) } });
-  };
+
+    await addDoc(collection(db, 'questionnaires'), {
+      ...formData,
+      trekMode,
+      riskScore,
+      userId: user.uid,
+      userEmail: user.email,
+      submittedAt: Timestamp.now(),
+    });
+
+    router.push({
+      pathname: '/results',
+      params: {
+        score: String(riskScore),
+        data: JSON.stringify(formData),
+      },
+    });
+  } catch (error) {
+    console.error('❌ Firestore write error:', error);
+    Alert.alert('Error', 'Failed to submit. Please try again.');
+  }
+};
+
+
+
 
   const renderQuestions = () => {
     switch (currentTab) {
@@ -220,7 +265,18 @@ const Questionnaire = () => {
             <Text style={styles.label}>Any medical conditions?</Text>
             <RadioGroup options={['Yes', 'No']} selected={formData.medicalConditions} onSelect={value => handleChange('medicalConditions', value)} />
             <Text style={styles.label}>If yes, specify</Text>
-            <TextInput style={styles.input} value={formData.medicalDetails} onChangeText={text => handleChange('medicalDetails', text)} />
+            <RadioGroup
+              options={medicalOptions}
+              selected={formData.medicalDetails}
+              onSelect={(value) =>{
+    if (formData.medicalDetails === value) {
+      // If the same option is clicked again, deselect it
+      handleChange('medicalDetails', '');
+    } else {
+      handleChange('medicalDetails', value);
+    }
+  }}
+            />
             <Text style={styles.label}>Medical Kit?</Text>
             <RadioGroup options={['Yes', 'No']} selected={formData.medicalKit} onSelect={value => handleChange('medicalKit', value)} />
           </View>

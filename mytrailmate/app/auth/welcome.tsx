@@ -6,10 +6,14 @@ import {
   StyleSheet,
   TextInput,
   Dimensions,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../firebaseConfig'; // ✅ Make sure this path is correct
 
 export default function WelcomeScreen() {
   const { width } = Dimensions.get('window');
@@ -18,6 +22,52 @@ export default function WelcomeScreen() {
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSignUp = async () => {
+    let valid = true;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?#&])[A-Za-z\d@$!%*?#&]{8,}$/;
+
+    if (!email.trim()) {
+      setEmailError('Please enter your email');
+      valid = false;
+    } else if (!emailRegex.test(email)) {
+      setEmailError('Enter a valid email address');
+      valid = false;
+    } else {
+      setEmailError('');
+    }
+
+    if (!password.trim()) {
+      setPasswordError('Please enter your password');
+      valid = false;
+    } else if (!passwordRegex.test(password)) {
+      setPasswordError(
+        'Password must be at least 8 characters and include upper, lower, number, and special character'
+      );
+      valid = false;
+    } else {
+      setPasswordError('');
+    }
+
+    if (!valid) return;
+
+    try {
+      setLoading(true);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const username = userCredential.user.email?.split('@')[0] ?? 'User';
+      Alert.alert('Sign Up Successful', `Welcome, ${username}!`);
+      router.replace('/questionnaire');
+    } catch (error: any) {
+      console.error('Sign Up Error:', error.message);
+      Alert.alert('Sign Up Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAwareScrollView
@@ -28,25 +78,16 @@ export default function WelcomeScreen() {
       style={{ flex: 1, backgroundColor: 'rgba(207, 233, 207, 0.95)' }}
     >
       <View style={styles.container}>
-        {/* Skip button at top right */}
-        <TouchableOpacity
-          style={styles.skipButton}
-          onPress={() => router.push('../(tabs)/home')}
-        >
+        <TouchableOpacity style={styles.skipButton} onPress={() => router.push('../(tabs)/home')}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
 
-        {/* App title and tagline */}
         <View style={styles.content}>
           <Text style={styles.title}>Welcome to MyTrailMate</Text>
         </View>
 
-        {/* Authentication Section */}
         <View style={styles.authContainer}>
-          <Image
-            source={require('../../assets/images/welcome.png')}
-            style={styles.background}
-          />
+          <Image source={require('../../assets/images/welcome.png')} style={styles.background} />
 
           <Text style={styles.heading}>Create an Account</Text>
 
@@ -71,56 +112,21 @@ export default function WelcomeScreen() {
           />
           {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
-          {/* Create Account Button */}
           <TouchableOpacity
-            style={[styles.button, styles.createAccountButton]}
-            onPress={() => {
-              let valid = true;
-
-              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-              const passwordRegex =
-                /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?#&])[A-Za-z\d@$!%*?#&]{8,}$/;
-
-              // Email validation
-              if (email.trim() === '') {
-                setEmailError('Please enter your email');
-                valid = false;
-              } else if (!emailRegex.test(email)) {
-                setEmailError('Enter a valid email address');
-                valid = false;
-              } else {
-                setEmailError('');
-              }
-
-              // Password validation
-              if (password.trim() === '') {
-                setPasswordError('Please enter your password');
-                valid = false;
-              } else if (!passwordRegex.test(password)) {
-                setPasswordError(
-                  'Password must be at least 8 characters and include upper, lower, number, and special character'
-                );
-                valid = false;
-              } else {
-                setPasswordError('');
-              }
-
-              if (valid) {
-                router.push('/questionnaire');
-              }
-            }}
+            style={[styles.button, styles.createAccountButton, loading && { backgroundColor: '#7daaf5' }]}
+            onPress={handleSignUp}
+            disabled={loading}
           >
-            <Text style={[styles.buttonText, { color: '#fff' }]}>Sign up</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={[styles.buttonText, { color: '#fff' }]}>Sign Up</Text>
+            )}
           </TouchableOpacity>
 
-          {/* Login Link */}
-          <TouchableOpacity
-            style={styles.loginLink}
-            onPress={() => router.push('../auth/sign-in')}
-          >
+          <TouchableOpacity style={styles.loginLink} onPress={() => router.push('../auth/sign-in')}>
             <Text style={styles.loginText}>
-              Already have an account?
-              <Text style={styles.loginBold}> Sign in</Text>
+              Already have an account? <Text style={styles.loginBold}>Sign in</Text>
             </Text>
           </TouchableOpacity>
         </View>

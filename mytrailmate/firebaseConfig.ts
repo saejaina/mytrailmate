@@ -1,29 +1,41 @@
-// firebaseConfig.ts
 import { initializeApp } from 'firebase/app';
-import { initializeAuth, getReactNativePersistence, getAuth } from 'firebase/auth/react-native';
+import { initializeAuth, getReactNativePersistence } from 'firebase/auth/react-native';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
+import { getAuth, Auth } from 'firebase/auth/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
+const extra = Constants.expoConfig?.extra;
+
 const firebaseConfig = {
-  apiKey: Constants.expoConfig?.extra?.firebaseApiKey,
-  authDomain: Constants.expoConfig?.extra?.firebaseAuthDomain,
-  projectId: Constants.expoConfig?.extra?.firebaseProjectId,
-  storageBucket: Constants.expoConfig?.extra?.firebaseStorageBucket,
-  messagingSenderId: Constants.expoConfig?.extra?.firebaseMessagingSenderId,
-  appId: Constants.expoConfig?.extra?.firebaseAppId,
+  apiKey: extra?.firebaseApiKey,
+  authDomain: extra?.firebaseAuthDomain,
+  projectId: extra?.firebaseProjectId,
+  storageBucket: extra?.firebaseStorageBucket,
+  messagingSenderId: extra?.firebaseMessagingSenderId,
+  appId: extra?.firebaseAppId,
 };
 
 const app = initializeApp(firebaseConfig);
 
-let auth;
-
-if (!auth) {
-  // ✅ this ensures it works on mobile with async storage
-  auth = initializeAuth(app, {
+const auth = initializeAuth(app, {
     persistence: getReactNativePersistence(AsyncStorage),
   });
-} else {
-  auth = getAuth(app);
-}
 
-export { app, auth };
+// try {
+//   auth = initializeAuth(app, {
+//     persistence: getReactNativePersistence(AsyncStorage),
+//   });
+// } catch (e: any) {
+//   if (e?.message?.includes('already been initialized')) {
+//     auth = getAuth(app);
+//   } else {
+//     throw e;
+//   }
+// }
+
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+export { app, auth, db, storage };

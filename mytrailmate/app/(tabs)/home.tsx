@@ -8,6 +8,7 @@ import {
   Dimensions,
   Image,
   TouchableOpacity,
+  ImageBackground,
 } from 'react-native';
 import Collapsible from 'react-native-collapsible';
 import { useRouter } from 'expo-router';
@@ -78,15 +79,9 @@ export default function AboutUs() {
 
   return (
     <ScrollView style={s.container}>
-      <Video
-        source={require('../../assets/images/vid.mp4')}
-        style={s.video}
-        resizeMode={ResizeMode.COVER}
-        shouldPlay
-        isLooping
-        isMuted
-        useNativeControls={false}
-      />
+      <ImageBackground source={require('../../assets/images/skip.jpg')} style={s.image}>
+        <View style={s.overlay} />
+      </ImageBackground>
       <View style={s.section}>
         <Text style={s.heading}>Why MyTrailMate?</Text>
         {[
@@ -183,14 +178,21 @@ export default function AboutUs() {
     </ScrollView>
   );
 }
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
 
 const s = StyleSheet.create({
   container: {
     backgroundColor: '#f2f6ff',
   },
-  video: {
-    width,
-    height: 900,
+  image: {
+    width: SCREEN_WIDTH * 1,
+    height: SCREEN_WIDTH * 1.7,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    position: 'absolute',
   },
   section: {
     paddingVertical: 30,
