@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react'; 
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
   View,
@@ -148,11 +148,13 @@ const Questionnaire = () => {
     scrollToTab(currentTab);
   }, [currentTab]);
 
+  // -------------------------
+  // Weighted Sum Risk Score
+  // -------------------------
   const calculateRisk = () => {
     let score = 100;
-    const age = parseInt(formData.age);
     const trekCount = parseInt(formData.trekCount || '0');
-    if (age < 16 || age > 50) score -= 10;
+    if (formData.age === '<16' || formData.age === '>50') score -= 10;
     if (formData.medicalConditions === 'Yes') score -= 15;
     if (formData.backupPlan === 'No') score -= 10;
     if (trekCount < 2) score -= 15;
@@ -162,15 +164,74 @@ const Questionnaire = () => {
     return Math.max(0, score);
   };
 
+  // -------------------------
+  // Naive Bayes Classifier
+  // -------------------------
+  const classifyRiskNaiveBayes = (formData: FormData) => {
+    const priors = { Low: 0.4, Moderate: 0.4, High: 0.2 };
+    const likelihoods: Record<string, Record<string, Record<string, number>>> = {
+      age: {
+        '<16': { High: 0.6, Moderate: 0.3, Low: 0.1 },
+        '16–30': { High: 0.1, Moderate: 0.4, Low: 0.5 },
+        '31–50': { High: 0.2, Moderate: 0.5, Low: 0.3 },
+        '>50': { High: 0.5, Moderate: 0.3, Low: 0.2 },
+      },
+      medicalConditions: {
+        Yes: { High: 0.7, Moderate: 0.25, Low: 0.05 },
+        No: { High: 0.1, Moderate: 0.4, Low: 0.5 },
+      },
+      trekCount: {
+        '0': { High: 0.6, Moderate: 0.3, Low: 0.1 },
+        '1': { High: 0.4, Moderate: 0.4, Low: 0.2 },
+        '2-5': { High: 0.2, Moderate: 0.5, Low: 0.3 },
+        '5+': { High: 0.1, Moderate: 0.3, Low: 0.6 },
+      },
+      coldSensitive: {
+        Yes: { High: 0.5, Moderate: 0.4, Low: 0.1 },
+        No: { High: 0.2, Moderate: 0.4, Low: 0.4 },
+      },
+      backupPlan: {
+        Yes: { High: 0.2, Moderate: 0.4, Low: 0.4 },
+        No: { High: 0.5, Moderate: 0.4, Low: 0.1 },
+      },
+    };
+
+    let posterior = { ...priors };
+    Object.keys(likelihoods).forEach(feature => {
+      const value = formData[feature as keyof FormData] as string;
+      if (value && likelihoods[feature][value]) {
+        Object.keys(posterior).forEach(riskLevel => {
+          posterior[riskLevel as keyof typeof posterior] *= likelihoods[feature][value][riskLevel];
+        });
+      }
+    });
+
+    const total = Object.values(posterior).reduce((a, b) => a + b, 0);
+    Object.keys(posterior).forEach(key => {
+      posterior[key as keyof typeof posterior] /= total;
+    });
+
+    const predictedRisk = Object.entries(posterior).reduce((a, b) =>
+      a[1] > b[1] ? a : b
+    )[0];
+
+    let bayesScore = 0;
+    if (predictedRisk === 'Low') bayesScore = 80 + Math.floor(Math.random() * 20);
+    if (predictedRisk === 'Moderate') bayesScore = 50 + Math.floor(Math.random() * 30);
+    if (predictedRisk === 'High') bayesScore = 20 + Math.floor(Math.random() * 30);
+
+    return { predictedRisk, score: bayesScore };
+  };
+
+  // -------------------------
+  // Submit
+  // -------------------------
   const handleSubmit = async () => {
     const requiredFields = [
       'name', 'age', 'bloodGroup', 'medicalConditions',
       'trekCount', 'backupPlan', 'emergencyName', 'emergencyPhone'
     ];
-
-    if (trekMode === 'group') {
-      requiredFields.push('groupMembers', 'groupGear');
-    }
+    if (trekMode === 'group') requiredFields.push('groupMembers', 'groupGear');
 
     const isValid = requiredFields.every(field => {
       const value = formData[field];
@@ -190,7 +251,8 @@ const Questionnaire = () => {
       return;
     }
 
-    const riskScore = calculateRisk();
+    const weightedScore = calculateRisk();
+    const { predictedRisk, score: bayesScore } = classifyRiskNaiveBayes(formData);
 
     try {
       const user = auth.currentUser;
@@ -202,7 +264,9 @@ const Questionnaire = () => {
       await addDoc(collection(db, 'questionnaires'), {
         ...formData,
         trekMode,
-        riskScore,
+        weightedScore,
+        bayesScore,
+        predictedRisk,
         userId: user.uid,
         userEmail: user.email,
         submittedAt: Timestamp.now(),
@@ -211,7 +275,9 @@ const Questionnaire = () => {
       router.push({
         pathname: '/results',
         params: {
-          score: String(riskScore),
+          weightedScore: String(weightedScore),
+          bayesScore: String(bayesScore),
+          category: predictedRisk,
           data: JSON.stringify(formData),
         },
       });
@@ -221,6 +287,9 @@ const Questionnaire = () => {
     }
   };
 
+  // -------------------------
+  // Render UI
+  // -------------------------
   const renderQuestions = () => {
     switch (currentTab) {
       case 0:
@@ -270,14 +339,10 @@ const Questionnaire = () => {
             <Text style={styles.label}>Any medical conditions?</Text>
             <RadioGroup options={['Yes', 'No']} selected={formData.medicalConditions} onSelect={value => handleChange('medicalConditions', value)} />
             <Text style={styles.label}>If yes, specify</Text>
-            <RadioGroup
-              options={medicalOptions}
-              selected={formData.medicalDetails}
-              onSelect={(value) =>{
-                if (formData.medicalDetails === value) handleChange('medicalDetails', '');
-                else handleChange('medicalDetails', value);
-              }}
-            />
+            <RadioGroup options={medicalOptions} selected={formData.medicalDetails} onSelect={(value) => {
+              if (formData.medicalDetails === value) handleChange('medicalDetails', '');
+              else handleChange('medicalDetails', value);
+            }} />
             <Text style={styles.label}>Medical Kit?</Text>
             <RadioGroup options={['Yes', 'No']} selected={formData.medicalKit} onSelect={value => handleChange('medicalKit', value)} />
           </View>
@@ -297,12 +362,7 @@ const Questionnaire = () => {
               const checked = formData.gear.includes(item);
               return (
                 <TouchableOpacity key={idx} onPress={() => toggleGearItem(item)} style={styles.gearItemRow}>
-                  <Ionicons
-                    name={checked ? 'checkbox-outline' : 'square-outline'}
-                    size={22}
-                    color={checked ? '#34c759' : '#888'}
-                    style={{ marginRight: 10 }}
-                  />
+                  <Ionicons name={checked ? 'checkbox-outline' : 'square-outline'} size={22} color={checked ? '#34c759' : '#888'} style={{ marginRight: 10 }} />
                   <Text style={styles.gearItemText}>{item}</Text>
                 </TouchableOpacity>
               );
@@ -330,7 +390,7 @@ const Questionnaire = () => {
             <Text style={styles.label}>Emergency Contact Name</Text>
             <TextInput style={styles.input} value={formData.emergencyName} onChangeText={text => handleChange('emergencyName', text)} />
             <Text style={styles.label}>Emergency Phone Number</Text>
-            <TextInput style={styles.input} keyboardType="phone-pad" value={formData.emergencyPhone} onChangeText={text => handleChange('emergencyPhone', text)} placeholder="98XXXXXXXX"/>
+            <TextInput style={styles.input} keyboardType="phone-pad" value={formData.emergencyPhone} onChangeText={text => handleChange('emergencyPhone', text)} placeholder="98XXXXXXXX" />
           </View>
         );
       default:
@@ -352,22 +412,18 @@ const Questionnaire = () => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {renderQuestions()}
 
-       
-        {/* Save & Continue */}
         {currentTab < topics.length - 1 && (
           <TouchableOpacity style={styles.saveButton} onPress={() => setCurrentTab(prev => prev + 1)}>
             <Text style={styles.saveButtonText}>Next</Text>
           </TouchableOpacity>
         )}
 
-        {/* Submit */}
         {currentTab === topics.length - 1 && (
           <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
             <Text style={styles.submitButtonText}>Submit</Text>
           </TouchableOpacity>
         )}
 
-         {/* Back Buttons */}
         {currentTab === 0 && (
           <TouchableOpacity
             style={[styles.saveButton, { backgroundColor: '#524f4fff', marginTop: 15 }]}
@@ -387,7 +443,6 @@ const Questionnaire = () => {
             <Text style={styles.saveButtonText}>Back</Text>
           </TouchableOpacity>
         )}
-
       </ScrollView>
     </View>
   );
