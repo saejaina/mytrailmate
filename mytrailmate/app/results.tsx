@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'; 
 import {
   View,
   Text,
@@ -14,13 +14,21 @@ import Svg, { Circle } from 'react-native-svg';
 const Results = () => {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { score, data } = useLocalSearchParams();
+  const { weightedScore, data } = useLocalSearchParams();
 
-  if (!score || !data) return null;
+  if (!weightedScore || !data) return null;
 
   const parsedData = JSON.parse(data as string);
-  const numericScore = parseInt(score as string);
-  const percentage = Math.min(Math.max(numericScore, 0), 100);
+  const numericScore = Math.min(Math.max(parseInt(weightedScore as string), 0), 100);
+  const percentage = numericScore;
+
+  // ------------------ Map Weighted Score to Risk Category ------------------
+  const getRiskCategory = (score: number) => {
+    if (score >= 90) return "Low";          // 90-100% → Low Risk
+    if (score >= 60) return "Moderate";     // 60-89% → Moderate Risk
+    return "High";                           // 0-59% → High Risk
+  };
+  const category = getRiskCategory(numericScore);
 
   const radius = width * 0.3;
   const strokeWidth = 12;
@@ -55,10 +63,17 @@ const Results = () => {
     return tips;
   };
 
+  const getBayesColor = () => {
+    if (category === 'High') return '#F87171';
+    if (category === 'Moderate') return '#FBBF24';
+    return '#34D399'; // Low
+  };
+
   return (
     <ScrollView contentContainerStyle={[styles.container, { paddingTop: 50, paddingBottom: 60, paddingLeft: 30, paddingRight: 30 }]}>
       <Text style={styles.title}>Your Trek Readiness Score</Text>
 
+      {/* Weighted Score Chart */}
       <View style={styles.chartWrapper}>
         <Svg width={radius * 2 + 20} height={radius * 2 + 20}>
           <Circle
@@ -83,14 +98,29 @@ const Results = () => {
             origin={`${radius + 10}, ${radius + 10}`}
           />
         </Svg>
-        <Text style={[styles.scoreText, { top: radius + 10 - 25 }]}> {percentage}% </Text>
+        <Text style={[styles.scoreText, { top: radius + 10 - 25 }]}>{percentage}%</Text>
       </View>
 
+      {/* Area Risk Card */}
+      <View style={styles.card}>
+  <Text style={styles.cardTitle}>🚨 Risk Level</Text>
+  <View style={[styles.bayesBadge, { backgroundColor: getBayesColor(), alignSelf: 'center' }]}>
+    <Text style={styles.bayesText}>{category}</Text>
+  </View>
+  <Text style={{ marginTop: 12, color: '#374151', textAlign: 'center' }}>
+    {category === 'High' ? '⚠️ This trek is high risk. Prepare carefully, carry full gear, and consider a guide.' : ''}
+    {category === 'Moderate' ? '⚡ Moderate risk. Be alert, pack essentials, and follow safety guidelines.' : ''}
+    {category === 'Low' ? '✅ Low risk. You are well-prepared to enjoy this trek safely!' : ''}
+  </Text>
+</View>
+
+
+      {/* Risk Breakdown */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>📊 Risk Breakdown</Text>
-        {Object.entries(categoryScores).map(([category, score]) => (
-          <View key={category} style={styles.breakdownRow}>
-            <Text style={styles.categoryText}>{category}</Text>
+        {Object.entries(categoryScores).map(([cat, score]) => (
+          <View key={cat} style={styles.breakdownRow}>
+            <Text style={styles.categoryText}>{cat}</Text>
             <View style={styles.scoreBarBackground}>
               <View style={[styles.scoreBarFill, { width: `${(score / 25) * 100}%` }]} />
             </View>
@@ -99,6 +129,7 @@ const Results = () => {
         ))}
       </View>
 
+      {/* Improvement Tips */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>💡 How You Can Improve</Text>
         {getImprovementTips().map((tip, index) => (
@@ -109,9 +140,10 @@ const Results = () => {
         ))}
       </View>
 
+      {/* Buttons */}
       <TouchableOpacity
         style={[styles.actionButton, { backgroundColor: '#2c8ef4' }]}
-        onPress={() => router.push({ pathname: '/recommendtrails', params: { score } })}
+        onPress={() => router.push({ pathname: '/recommendtrails', params: { weightedScore, category } })}
       >
         <AntDesign name="enviromento" size={18} color="white" />
         <Text style={styles.buttonText}>Recommended Trails</Text>
@@ -130,97 +162,22 @@ const Results = () => {
 
 export default Results;
 
+// ------------------ Styles (unchanged) ------------------
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 24,
-    backgroundColor: '#F0F9FF',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 24,
-  },
-  chartWrapper: {
-    marginBottom: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  scoreText: {
-    position: 'absolute',
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1E3A8A',
-    textAlign: 'center',
-    width: '100%',
-  },
-  card: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 25,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-    color: '#1E40AF',
-  },
-  breakdownRow: {
-    marginBottom: 12,
-  },
-  categoryText: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
-    color: '#1F2937',
-  },
-  scoreBarBackground: {
-    height: 10,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  scoreBarFill: {
-    height: 10,
-    backgroundColor: '#3B82F6',
-  },
-  scoreTextSmall: {
-    fontSize: 13,
-    color: '#374151',
-    marginTop: 2,
-  },
-  tipItem: {
-    fontSize: 15,
-    color: '#374151',
-    marginBottom: 8,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    backgroundColor: '#2c8ef4',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    marginLeft: 10,
-    fontWeight: '600',
-  },
+  container: { paddingHorizontal: 24, backgroundColor: '#F0F9FF', alignItems: 'center' },
+  title: { fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 24 },
+  chartWrapper: { marginBottom: 36, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  scoreText: { position: 'absolute', fontSize: 32, fontWeight: 'bold', color: '#1E3A8A', textAlign: 'center', width: '100%' },
+  card: { width: '100%', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 25, shadowColor: '#000', shadowOpacity: 0.05, shadowOffset: { width: 0, height: 3 }, shadowRadius: 6, elevation: 4 },
+  cardTitle: { fontSize: 18, fontWeight: '600', marginBottom: 12, color: '#1E40AF' },
+  bayesBadge: { alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20 },
+  bayesText: { color: '#fff', fontSize: 16, fontWeight: '700', textTransform: 'uppercase' },
+  breakdownRow: { marginBottom: 12 },
+  categoryText: { fontSize: 16, fontWeight: '500', marginBottom: 4, color: '#1F2937' },
+  scoreBarBackground: { height: 10, backgroundColor: '#E5E7EB', borderRadius: 6, overflow: 'hidden' },
+  scoreBarFill: { height: 10, backgroundColor: '#3B82F6' },
+  scoreTextSmall: { fontSize: 13, color: '#374151', marginTop: 2 },
+  tipItem: { fontSize: 15, color: '#374151', marginBottom: 8 },
+  actionButton: { flexDirection: 'row', backgroundColor: '#2c8ef4', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 12, alignItems: 'center', marginVertical: 8, shadowColor: '#000', shadowOpacity: 0.08, shadowOffset: { width: 0, height: 3 }, shadowRadius: 6, elevation: 4 },
+  buttonText: { color: 'white', fontSize: 16, marginLeft: 10, fontWeight: '600' },
 });
