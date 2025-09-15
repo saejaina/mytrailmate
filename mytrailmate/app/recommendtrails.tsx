@@ -68,6 +68,19 @@ const RecommendTrails = () => {
     setRecommendedTrailList(suitableTrails);
   }, [category]);
 
+  // Group trails by difficulty
+  const groupedTrails: Record<string, Trail[]> = {
+    Low: recommendedTrailList.filter((t) => t.difficulty === "Low"),
+    Moderate: recommendedTrailList.filter((t) => t.difficulty === "Moderate"),
+    High: recommendedTrailList.filter((t) => t.difficulty === "High"),
+  };
+
+  const difficultyColors: Record<string, string> = {
+    Low: "green",
+    Moderate: "#CA8A04",
+    High: "#EF4444",
+  };
+
   return (
     <ScrollView
       contentContainerStyle={[
@@ -77,47 +90,37 @@ const RecommendTrails = () => {
     >
       <Text style={styles.title}>🏞️ Recommended Trails for You</Text>
 
-      {recommendedTrailList.length === 0 && (
-        <Text style={{ fontSize: 16, color: "#374151" }}>
-          No suitable trails available for your risk level.
-        </Text>
-      )}
+      {Object.keys(groupedTrails).map((difficulty) => {
+        const trails = groupedTrails[difficulty];
+        if (trails.length === 0) return null;
 
-      {recommendedTrailList.map((trail, index) => (
-        <View key={index} style={styles.trailCard}>
-          <Text style={styles.trailName}>{trail.name}</Text>
-          <Text style={styles.trailInfo}>
-            Difficulty:{" "}
-            <Text
-              style={{
-                color:
-                  trail.difficulty === "Low"
-                    ? "green"
-                    : trail.difficulty === "Moderate"
-                    ? "#CA8A04"
-                    : "#EF4444",
-              }}
-            >
-              {trail.difficulty}
+        return (
+          <View key={difficulty} style={{ marginBottom: 30, width: "100%" }}>
+            <Text style={[styles.categoryTitle, { color: difficultyColors[difficulty] }]}>
+              {difficulty} Difficulty
             </Text>
-          </Text>
-          <Text style={styles.trailInfo}>
-            Risk:{" "}
-            <Text
-              style={{
-                color:
-                  trail.risk === "Low Risk"
-                    ? "green"
-                    : trail.risk === "Moderate Risk"
-                    ? "#CA8A04"
-                    : "#EF4444",
-              }}
-            >
-              {trail.risk}
-            </Text>
-          </Text>
-        </View>
-      ))}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {trails.map((trail, index) => (
+                <View key={index} style={styles.trailCardHorizontal}>
+                  <Text style={styles.trailName}>{trail.name}</Text>
+                  <Text style={styles.trailInfo}>
+                    Difficulty:{" "}
+                    <Text style={{ color: difficultyColors[trail.difficulty] }}>
+                      {trail.difficulty}
+                    </Text>
+                  </Text>
+                  <Text style={styles.trailInfo}>
+                    Risk:{" "}
+                    <Text style={{ color: difficultyColors[trail.difficulty] }}>
+                      {trail.risk}
+                    </Text>
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        );
+      })}
 
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <AntDesign name="arrowleft" size={18} color="#fff" />
@@ -151,26 +154,31 @@ const styles = StyleSheet.create({
     color: "#1E3A8A",
     textAlign: "center",
   },
-  trailCard: {
+  categoryTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+  trailCardHorizontal: {
     backgroundColor: "#fff",
     padding: 16,
-    marginBottom: 20,
+    marginRight: 16,
     borderRadius: 12,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 6,
     elevation: 4,
-    width: "100%",
+    width: 220,
   },
   trailName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
     color: "#1E40AF",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   trailInfo: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#374151",
     marginTop: 4,
   },
